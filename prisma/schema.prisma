@@ -1,0 +1,188 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model StudioSettings {
+  id          String   @id @default(cuid())
+  studioName  String
+  defaultIp   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model IntellectualProperty {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  series      Series[]
+  publications Publication[]
+}
+
+model Series {
+  id          String   @id @default(cuid())
+  ipId        String
+  slug        String   @unique
+  name        String
+  volumeNumber Int?
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  ip          IntellectualProperty @relation(fields: [ipId], references: [id], onDelete: Cascade)
+  publications Publication[]
+}
+
+model Publication {
+  id            String   @id @default(cuid())
+  publicationId String   @unique
+  projectId     String
+  projectSlug   String
+  channel       String
+  language      String
+  sourceSystem  String?
+  status        String
+  payloadJson   Json
+  warningsJson  Json?
+  errorsJson    Json?
+  ipId          String
+  seriesId      String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  ip            IntellectualProperty @relation(fields: [ipId], references: [id], onDelete: Cascade)
+  series        Series? @relation(fields: [seriesId], references: [id], onDelete: SetNull)
+  variants      PublicationVariant[]
+}
+
+model PublicationVariant {
+  id                String   @id @default(cuid())
+  publicationIdRef  String
+  variantId         String   @unique
+  projectId         String
+  projectSlug       String
+  channel           String
+  language          String
+  format            String
+  slug              String   @unique
+  title             String
+  subtitle          String?
+  description       String
+  shortDescription  String?
+  price             Decimal? @db.Decimal(10,2)
+  currency          String?
+  payloadJson       Json
+  published         Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  publication       Publication @relation(fields: [publicationIdRef], references: [publicationId], onDelete: Cascade)
+  assets            PublicationAsset[]
+  products          Product[]
+}
+
+model PublicationAsset {
+  id          String   @id @default(cuid())
+  variantIdRef String
+  role        String
+  fileUrl     String
+  mimeType    String?
+  createdAt   DateTime @default(now())
+
+  variant     PublicationVariant @relation(fields: [variantIdRef], references: [variantId], onDelete: Cascade)
+}
+
+model Product {
+  id              String   @id @default(cuid())
+  publicationVariantId String
+  slug            String   @unique
+  title           String
+  type            ProductType
+  priceCents      Int
+  currency        String   @default("EUR")
+  active          Boolean  @default(false)
+  featured        Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  variant         PublicationVariant @relation(fields: [publicationVariantId], references: [variantId], onDelete: Cascade)
+  libraryEntries  CustomerLibrary[]
+  checkoutItems   CheckoutItem[]
+}
+
+model Customer {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  library     CustomerLibrary[]
+  checkouts   Checkout[]
+}
+
+model CustomerLibrary {
+  id          String   @id @default(cuid())
+  customerId  String
+  productId   String
+  grantedAt   DateTime @default(now())
+
+  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, productId])
+}
+
+model Checkout {
+  id          String   @id @default(cuid())
+  customerId  String
+  provider    CheckoutProvider
+  providerRef String?  @unique
+  amountCents Int
+  currency    String   @default("EUR")
+  status      CheckoutStatus @default(PENDING)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  items       CheckoutItem[]
+}
+
+model CheckoutItem {
+  id              String   @id @default(cuid())
+  checkoutId      String
+  productId       String
+  quantity        Int      @default(1)
+  unitAmountCents Int
+
+  checkout        Checkout @relation(fields: [checkoutId], references: [id], onDelete: Cascade)
+  product         Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@unique([checkoutId, productId])
+}
+
+enum ProductType {
+  EBOOK
+  AUDIOBOOK
+  VIDEO
+  BUNDLE
+}
+
+enum CheckoutProvider {
+  STRIPE
+  PAYPAL
+}
+
+enum CheckoutStatus {
+  PENDING
+  PAID
+  FAILED
+  CANCELED
+}
