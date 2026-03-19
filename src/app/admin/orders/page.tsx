@@ -1,4 +1,5 @@
 export const dynamic = "force-dynamic";
+
 import AdminNav from "@/components/admin-nav";
 import { prisma } from "@/lib/prisma";
 import { centsToEuro } from "@/lib/pricing";
@@ -17,12 +18,15 @@ export default async function AdminOrdersPage() {
   });
 
   return (
-    <main className="admin-layout" style={{ marginTop: 24 }}>
+    <main className="admin-layout">
       <AdminNav />
       <section>
-        <h1>Pedidos</h1>
+        <div className="page-intro">
+          <h1>Pedidos</h1>
+          <p className="notice">Histórico de compras e pagamentos.</p>
+        </div>
 
-        <div className="card" style={{ marginTop: 20 }}>
+        <div className="card table-wrap">
           <table>
             <thead>
               <tr>
@@ -51,4 +55,4 @@ export default async function AdminOrdersPage() {
       </section>
     </main>
   );
-}
+              }
