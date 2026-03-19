@@ -1,4 +1,5 @@
 export const dynamic = "force-dynamic";
+
 import AdminNav from "@/components/admin-nav";
 import { prisma } from "@/lib/prisma";
 
@@ -13,12 +14,15 @@ export default async function AdminPublicationsPage() {
   });
 
   return (
-    <main className="admin-layout" style={{ marginTop: 24 }}>
+    <main className="admin-layout">
       <AdminNav />
       <section>
-        <h1>Publicações</h1>
+        <div className="page-intro">
+          <h1>Publicações</h1>
+          <p className="notice">Registos editoriais recebidos do Studio.</p>
+        </div>
 
-        <div className="card" style={{ marginTop: 20 }}>
+        <div className="card table-wrap">
           <table>
             <thead>
               <tr>
@@ -47,4 +51,4 @@ export default async function AdminPublicationsPage() {
       </section>
     </main>
   );
-}
+                  }
