@@ -1,32 +1,36 @@
 import Image from "next/image";
 
 type Props = {
-  variant?: "full" | "compact" | "badge";
+  variant?: "studio-primary" | "ip-secondary" | "badge";
+  priority?: boolean;
 };
 
-export default function BrandLogos({ variant = "full" }: Props) {
+export default function BrandLogos({
+  variant = "studio-primary",
+  priority = false,
+}: Props) {
   if (variant === "badge") {
     return (
       <Image
         className="brand-badge-protect"
         src="/brand/historia-que-protege-selo.png"
         alt="História que Protege"
-        width={200}
-        height={80}
-        priority
+        width={180}
+        height={72}
+        priority={priority}
       />
     );
   }
 
-  if (variant === "compact") {
+  if (variant === "ip-secondary") {
     return (
       <Image
         className="brand-logo-series"
         src="/brand/os-baribudos-logo.png"
         alt="Os Baribudos"
-        width={220}
-        height={90}
-        priority
+        width={200}
+        height={82}
+        priority={priority}
       />
     );
   }
@@ -36,9 +40,9 @@ export default function BrandLogos({ variant = "full" }: Props) {
       className="brand-logo-studio"
       src="/brand/baribudos-studio-logo.png"
       alt="Baribudos Studio"
-      width={240}
-      height={100}
-      priority
+      width={280}
+      height={110}
+      priority={priority}
     />
   );
-                                    }
+      }
