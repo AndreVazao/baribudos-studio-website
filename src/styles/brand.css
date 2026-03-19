@@ -1,31 +1,33 @@
 .brand-logo-studio {
-  height: 64px;
+  height: 78px;
   width: auto;
   object-fit: contain;
 }
 
 .brand-logo-series {
-  height: 56px;
+  height: 44px;
   width: auto;
   object-fit: contain;
+  opacity: 0.92;
 }
 
 .brand-badge-protect {
-  height: 56px;
+  height: 46px;
   width: auto;
   object-fit: contain;
+  opacity: 0.95;
 }
 
 @media (max-width: 768px) {
   .brand-logo-studio {
-    height: 48px;
+    height: 58px;
   }
 
   .brand-logo-series {
-    height: 42px;
+    height: 34px;
   }
 
   .brand-badge-protect {
-    height: 42px;
+    height: 36px;
   }
 }
