@@ -1,4 +1,5 @@
 export const dynamic = "force-dynamic";
+
 import AdminNav from "@/components/admin-nav";
 import { prisma } from "@/lib/prisma";
 
@@ -12,31 +13,41 @@ export default async function AdminPage() {
   ]);
 
   return (
-    <main className="admin-layout" style={{ marginTop: 24 }}>
+    <main className="admin-layout">
       <AdminNav />
-      <section>
-        <h1>Painel do Website</h1>
 
-        <div className="grid" style={{ marginTop: 24 }}>
-          <div className="card">
-            <h3>Publicações</h3>
-            <p>{publications}</p>
+      <section className="admin-stack">
+        <div className="page-intro">
+          <h1>Painel do Website</h1>
+          <p className="notice">
+            Gestão editorial, comercial e operacional do Baribudos Studio Website.
+          </p>
+        </div>
+
+        <div className="kpi-grid">
+          <div className="kpi-card">
+            <span className="muted">Publicações</span>
+            <strong>{publications}</strong>
           </div>
-          <div className="card">
-            <h3>Variantes</h3>
-            <p>{variants}</p>
+
+          <div className="kpi-card">
+            <span className="muted">Variantes</span>
+            <strong>{variants}</strong>
           </div>
-          <div className="card">
-            <h3>Produtos</h3>
-            <p>{products}</p>
+
+          <div className="kpi-card">
+            <span className="muted">Produtos</span>
+            <strong>{products}</strong>
           </div>
-          <div className="card">
-            <h3>Clientes</h3>
-            <p>{customers}</p>
+
+          <div className="kpi-card">
+            <span className="muted">Clientes</span>
+            <strong>{customers}</strong>
           </div>
-          <div className="card">
-            <h3>Pedidos</h3>
-            <p>{orders}</p>
+
+          <div className="kpi-card">
+            <span className="muted">Pedidos</span>
+            <strong>{orders}</strong>
           </div>
         </div>
       </section>
