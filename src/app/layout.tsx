@@ -17,8 +17,12 @@ export default function RootLayout({
       <body>
         <div className="wrapper">
           <header className="topbar">
-            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-              <BrandLogos variant="compact" />
+            <div className="topbar-left">
+              <BrandLogos variant="studio-primary" priority />
+              <div className="topbar-brand-copy">
+                <strong>Baribudos Studio</strong>
+                <span>Editorial, IPs, eBooks, Audiobooks e séries</span>
+              </div>
             </div>
 
             <nav className="nav">
