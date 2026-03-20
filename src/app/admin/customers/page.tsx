@@ -2,9 +2,12 @@ export const dynamic = "force-dynamic";
 
 import AdminNav from "@/components/admin-nav";
 import { prisma } from "@/lib/prisma";
+import { requirePageAdmin } from "@/lib/auth-guards";
 
 export default async function AdminCustomersPage() {
-  const customers = await prisma.customer.findMany({
+  await requirePageAdmin();
+
+  const users = await prisma.user.findMany({
     orderBy: { createdAt: "desc" },
     include: {
       library: true,
@@ -17,8 +20,8 @@ export default async function AdminCustomersPage() {
       <AdminNav />
       <section>
         <div className="page-intro">
-          <h1>Clientes</h1>
-          <p className="notice">Contas comerciais e atividade de compra.</p>
+          <h1>Utilizadores</h1>
+          <p className="notice">Clientes, admins e editores do sistema.</p>
         </div>
 
         <div className="card table-wrap">
@@ -26,16 +29,20 @@ export default async function AdminCustomersPage() {
             <thead>
               <tr>
                 <th>Email</th>
+                <th>Papel</th>
                 <th>Compras</th>
                 <th>Biblioteca</th>
+                <th>Ativo</th>
               </tr>
             </thead>
             <tbody>
-              {customers.map((customer) => (
-                <tr key={customer.id}>
-                  <td>{customer.email}</td>
-                  <td>{customer.checkouts.length}</td>
-                  <td>{customer.library.length}</td>
+              {users.map((user) => (
+                <tr key={user.id}>
+                  <td>{user.email}</td>
+                  <td>{user.role}</td>
+                  <td>{user.checkouts.length}</td>
+                  <td>{user.library.length}</td>
+                  <td>{user.isActive ? "Sim" : "Não"}</td>
                 </tr>
               ))}
             </tbody>
@@ -44,4 +51,4 @@ export default async function AdminCustomersPage() {
       </section>
     </main>
   );
-}
+    }
