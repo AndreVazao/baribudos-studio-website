@@ -1,19 +1,28 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { stripe } from "@/lib/stripe";
+import { getStripe } from "@/lib/stripe";
+import { getCurrentUser } from "@/lib/auth-session";
 
 export async function POST(request: Request) {
   try {
     const { productId, email } = await request.json();
 
-    if (!productId || !email) {
+    if (!productId) {
       return NextResponse.json(
-        { error: "productId e email são obrigatórios." },
+        { error: "productId é obrigatório." },
         { status: 400 }
       );
     }
 
-    const normalizedEmail = String(email).toLowerCase().trim();
+    const currentUser = await getCurrentUser();
+    const normalizedEmail = currentUser?.email || String(email || "").toLowerCase().trim();
+
+    if (!normalizedEmail) {
+      return NextResponse.json(
+        { error: "Sessão ou email obrigatório." },
+        { status: 400 }
+      );
+    }
 
     const product = await prisma.product.findUnique({
       where: { id: productId },
@@ -23,15 +32,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Produto indisponível." }, { status: 404 });
     }
 
-    const customer = await prisma.customer.upsert({
-      where: { email: normalizedEmail },
-      update: {},
-      create: { email: normalizedEmail },
-    });
+    const user = currentUser
+      ? currentUser
+      : await prisma.user.upsert({
+          where: { email: normalizedEmail },
+          update: {},
+          create: {
+            email: normalizedEmail,
+            passwordHash: "TEMP_EXTERNAL_CHECKOUT_ONLY",
+            role: "CUSTOMER",
+          },
+        });
 
     const checkout = await prisma.checkout.create({
       data: {
-        customerId: customer.id,
+        userId: user.id,
         provider: "STRIPE",
         amountCents: product.priceCents,
         currency: product.currency,
@@ -45,6 +60,8 @@ export async function POST(request: Request) {
         },
       },
     });
+
+    const stripe = getStripe();
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
@@ -65,7 +82,7 @@ export async function POST(request: Request) {
       cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/loja/${product.slug}`,
       metadata: {
         checkoutId: checkout.id,
-        customerEmail: normalizedEmail,
+        userEmail: normalizedEmail,
       },
     });
 
@@ -85,4 +102,4 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
-}
+        }
