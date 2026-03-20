@@ -3,12 +3,15 @@ export const dynamic = "force-dynamic";
 import AdminNav from "@/components/admin-nav";
 import { prisma } from "@/lib/prisma";
 import { centsToEuro } from "@/lib/pricing";
+import { requirePageAdmin } from "@/lib/auth-guards";
 
 export default async function AdminOrdersPage() {
+  await requirePageAdmin();
+
   const orders = await prisma.checkout.findMany({
     orderBy: { createdAt: "desc" },
     include: {
-      customer: true,
+      user: true,
       items: {
         include: {
           product: true,
@@ -31,7 +34,7 @@ export default async function AdminOrdersPage() {
             <thead>
               <tr>
                 <th>Data</th>
-                <th>Cliente</th>
+                <th>Utilizador</th>
                 <th>Fornecedor</th>
                 <th>Valor</th>
                 <th>Estado</th>
@@ -42,7 +45,7 @@ export default async function AdminOrdersPage() {
               {orders.map((order) => (
                 <tr key={order.id}>
                   <td>{new Date(order.createdAt).toLocaleString("pt-PT")}</td>
-                  <td>{order.customer.email}</td>
+                  <td>{order.user.email}</td>
                   <td>{order.provider}</td>
                   <td>{centsToEuro(order.amountCents, order.currency)}</td>
                   <td>{order.status}</td>
@@ -55,4 +58,4 @@ export default async function AdminOrdersPage() {
       </section>
     </main>
   );
-              }
+      }
