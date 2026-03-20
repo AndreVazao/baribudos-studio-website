@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { capturePayPalOrder } from "@/lib/paypal";
-import { buildLibraryToken } from "@/lib/library";
 
 export async function POST(request: Request) {
   try {
@@ -17,7 +16,7 @@ export async function POST(request: Request) {
       where: { providerRef: orderId },
       include: {
         items: true,
-        customer: true,
+        user: true,
       },
     });
 
@@ -33,27 +32,22 @@ export async function POST(request: Request) {
     for (const item of checkout.items) {
       await prisma.customerLibrary.upsert({
         where: {
-          customerId_productId: {
-            customerId: checkout.customerId,
+          userId_productId: {
+            userId: checkout.userId,
             productId: item.productId,
           },
         },
         update: {},
         create: {
-          customerId: checkout.customerId,
+          userId: checkout.userId,
           productId: item.productId,
         },
       });
     }
 
-    const token = buildLibraryToken(checkout.customer.email);
-
     return NextResponse.json({
       ok: true,
-      successUrl:
-        `${process.env.NEXT_PUBLIC_SITE_URL}/sucesso` +
-        `?provider=paypal&email=${encodeURIComponent(checkout.customer.email)}` +
-        `&token=${encodeURIComponent(token)}`,
+      successUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/biblioteca`,
     });
   } catch (error) {
     return NextResponse.json(
@@ -63,4 +57,4 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
-}
+        }
