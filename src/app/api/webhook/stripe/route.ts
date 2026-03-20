@@ -1,9 +1,8 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
-import { stripe } from "@/lib/stripe";
+import { getStripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
-import { buildLibraryToken } from "@/lib/library";
 
 export async function POST(request: Request) {
   const body = await request.text();
@@ -16,6 +15,8 @@ export async function POST(request: Request) {
   let event: Stripe.Event;
 
   try {
+    const stripe = getStripe();
+
     event = stripe.webhooks.constructEvent(
       body,
       signature,
@@ -33,12 +34,11 @@ export async function POST(request: Request) {
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
     const checkoutId = session.metadata?.checkoutId;
-    const customerEmail = session.metadata?.customerEmail;
 
-    if (checkoutId && customerEmail) {
+    if (checkoutId) {
       const checkout = await prisma.checkout.findUnique({
         where: { id: checkoutId },
-        include: { items: true, customer: true },
+        include: { items: true, user: true },
       });
 
       if (checkout) {
@@ -50,31 +50,21 @@ export async function POST(request: Request) {
         for (const item of checkout.items) {
           await prisma.customerLibrary.upsert({
             where: {
-              customerId_productId: {
-                customerId: checkout.customerId,
+              userId_productId: {
+                userId: checkout.userId,
                 productId: item.productId,
               },
             },
             update: {},
             create: {
-              customerId: checkout.customerId,
+              userId: checkout.userId,
               productId: item.productId,
             },
           });
         }
-
-        const token = buildLibraryToken(customerEmail);
-
-        return NextResponse.json({
-          ok: true,
-          libraryUrl:
-            `${process.env.NEXT_PUBLIC_SITE_URL}/sucesso` +
-            `?provider=stripe&email=${encodeURIComponent(customerEmail)}` +
-            `&token=${encodeURIComponent(token)}`,
-        });
       }
     }
   }
 
   return NextResponse.json({ ok: true });
-  }
+        }
