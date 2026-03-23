@@ -9,7 +9,8 @@ export default function AdminNav() {
       <Link href="/admin/publications">Publicações</Link>
       <Link href="/admin/products">Produtos</Link>
       <Link href="/admin/orders">Pedidos</Link>
-      <Link href="/admin/customers">Clientes</Link>
+      <Link href="/admin/customers">Utilizadores</Link>
+      <Link href="/admin/account">Minha conta</Link>
     </aside>
   );
 }
