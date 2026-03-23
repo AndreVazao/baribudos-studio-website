@@ -1,0 +1,136 @@
+baribudos-studio-website/
+├─ .github/
+│  └─ workflows/
+│     └─ visibility-only.yml
+├─ prisma/
+│  └─ schema.prisma
+├─ public/
+│  └─ brand/
+│     ├─ .gitkeep
+│     ├─ baribudos-studio-logo.png
+│     ├─ historia-que-protege-selo.png
+│     └─ os-baribudos-logo.png
+├─ src/
+│  ├─ app/
+│  │  ├─ admin/
+│  │  │  ├─ account/
+│  │  │  │  └─ page.tsx
+│  │  │  ├─ customers/
+│  │  │  │  └─ page.tsx
+│  │  │  ├─ import/
+│  │  │  │  └─ page.tsx
+│  │  │  ├─ orders/
+│  │  │  │  └─ page.tsx
+│  │  │  ├─ products/
+│  │  │  │  └─ page.tsx
+│  │  │  ├─ publications/
+│  │  │  │  └─ page.tsx
+│  │  │  └─ page.tsx
+│  │  ├─ api/
+│  │  │  ├─ account/
+│  │  │  │  └─ change-password/
+│  │  │  │     └─ route.ts
+│  │  │  ├─ admin/
+│  │  │  │  ├─ bootstrap/
+│  │  │  │  │  └─ route.ts
+│  │  │  │  ├─ import-package/
+│  │  │  │  │  └─ route.ts
+│  │  │  │  ├─ orders/
+│  │  │  │  │  └─ route.ts
+│  │  │  │  ├─ products/
+│  │  │  │  │  └─ route.ts
+│  │  │  │  ├─ publications/
+│  │  │  │  │  └─ route.ts
+│  │  │  │  └─ users/
+│  │  │  │     ├─ [id]/
+│  │  │  │     │  └─ route.ts
+│  │  │  │     └─ route.ts
+│  │  │  ├─ auth/
+│  │  │  │  ├─ login/
+│  │  │  │  │  └─ route.ts
+│  │  │  │  ├─ logout/
+│  │  │  │  │  └─ route.ts
+│  │  │  │  ├─ me/
+│  │  │  │  │  └─ route.ts
+│  │  │  │  └─ register/
+│  │  │  │     └─ route.ts
+│  │  │  ├─ checkout/
+│  │  │  │  ├─ paypal/
+│  │  │  │  │  ├─ capture-order/
+│  │  │  │  │  │  └─ route.ts
+│  │  │  │  │  └─ create-order/
+│  │  │  │  │     └─ route.ts
+│  │  │  │  └─ stripe/
+│  │  │  │     └─ route.ts
+│  │  │  ├─ library/
+│  │  │  │  └─ access/
+│  │  │  │     └─ route.ts
+│  │  │  ├─ publications/
+│  │  │  │  ├─ ingest/
+│  │  │  │  │  └─ route.ts
+│  │  │  │  └─ variant/
+│  │  │  │     └─ [variantId]/
+│  │  │  │        └─ route.ts
+│  │  │  └─ webhook/
+│  │  │     └─ stripe/
+│  │  │        └─ route.ts
+│  │  ├─ biblioteca/
+│  │  │  └─ page.tsx
+│  │  ├─ conta/
+│  │  │  └─ page.tsx
+│  │  ├─ ip/
+│  │  │  └─ [slug]/
+│  │  │     └─ page.tsx
+│  │  ├─ ips/
+│  │  │  └─ page.tsx
+│  │  ├─ login/
+│  │  │  └─ page.tsx
+│  │  ├─ loja/
+│  │  │  ├─ [slug]/
+│  │  │  │  └─ page.tsx
+│  │  │  └─ page.tsx
+│  │  ├─ paypal/
+│  │  │  └─ return/
+│  │  │     └─ page.tsx
+│  │  ├─ registar/
+│  │  │  └─ page.tsx
+│  │  ├─ studio/
+│  │  │  └─ page.tsx
+│  │  ├─ sucesso/
+│  │  │  └─ page.tsx
+│  │  ├─ globals.css
+│  │  ├─ layout.tsx
+│  │  └─ page.tsx
+│  ├─ components/
+│  │  ├─ brand/
+│  │  │  └─ BrandLogos.tsx
+│  │  ├─ admin-nav.tsx
+│  │  ├─ checkout-box.tsx
+│  │  ├─ paypal-button.tsx
+│  │  ├─ product-card.tsx
+│  │  └─ publication-card.tsx
+│  ├─ lib/
+│  │  ├─ auth-guards.ts
+│  │  ├─ auth-session.ts
+│  │  ├─ auth.ts
+│  │  ├─ library.ts
+│  │  ├─ password.ts
+│  │  ├─ paypal.ts
+│  │  ├─ pricing.ts
+│  │  ├─ prisma.ts
+│  │  ├─ publication-mapper.ts
+│  │  ├─ publication-query.ts
+│  │  ├─ publication-schema.ts
+│  │  ├─ slug.ts
+│  │  ├─ stripe.ts
+│  │  └─ sync-commerce.ts
+│  ├─ styles/
+│  │  └─ brand.css
+│  └─ middleware.ts
+├─ .env.example
+├─ .env.production
+├─ .gitignore
+├─ next.config.mjs
+├─ package.json
+├─ README.md
+└─ tsconfig.json
