@@ -1,17 +1,23 @@
 import "./globals.css";
 import Link from "next/link";
 import BrandLogos from "@/components/brand/BrandLogos";
+import { getCurrentUser } from "@/lib/auth-session";
 
 export const metadata = {
   title: "Baribudos Studio Website",
   description: "Plataforma editorial e comercial do Baribudos Studio.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const user = await getCurrentUser();
+
+  const isAdmin =
+    user && ["SUPER_ADMIN", "ADMIN", "EDITOR"].includes(user.role);
+
   return (
     <html lang="pt-PT">
       <body>
@@ -30,7 +36,10 @@ export default function RootLayout({
               <Link href="/studio">Studio</Link>
               <Link href="/ips">IPs</Link>
               <Link href="/loja">Loja</Link>
-              <Link href="/admin">Admin</Link>
+
+              {user ? <Link href="/conta">Conta</Link> : <Link href="/login">Entrar</Link>}
+
+              {isAdmin ? <Link href="/admin">Admin</Link> : null}
             </nav>
           </header>
 
