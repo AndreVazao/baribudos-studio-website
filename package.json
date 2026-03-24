@@ -19,6 +19,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6"
     "@types/node": "^22.13.13",
     "@types/react": "^18.3.18",
     "prisma": "^6.6.0",
