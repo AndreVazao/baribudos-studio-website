@@ -12,7 +12,7 @@ export async function POST(request: Request) {
 
     const normalizedEmail = String(email).toLowerCase().trim();
 
-    const customer = await prisma.customer.findUnique({
+    const customer = await prisma.user.findUnique({
       where: { email: normalizedEmail },
     });
 
@@ -36,4 +36,4 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
-      }
+        }
