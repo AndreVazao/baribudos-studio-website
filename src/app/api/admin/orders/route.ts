@@ -6,10 +6,10 @@ export async function GET(request: Request) {
   try {
     assertAdminKey(request);
 
-    const orders = await prisma.checkout.findMany({
+    const ordersRaw = await prisma.checkout.findMany({
       orderBy: { createdAt: "desc" },
       include: {
-        customer: true,
+        user: true,
         items: {
           include: {
             product: true,
@@ -17,6 +17,11 @@ export async function GET(request: Request) {
         },
       },
     });
+
+    const orders = ordersRaw.map(({ user, ...order }) => ({
+      ...order,
+      customer: user,
+    }));
 
     return NextResponse.json({ orders });
   } catch (error) {
