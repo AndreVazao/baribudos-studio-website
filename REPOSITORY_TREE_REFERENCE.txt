@@ -1,0 +1,133 @@
+BARIBUDOS STUDIO WEBSITE - REPOSITORY TREE REFERENCE
+Repository: AndreVazao/baribudos-studio-website
+Purpose: official repository structure reference before functional integration changes
+
+IMPORTANT NOTE
+This reference was created from connector-accessible audited files before functional changes. The connector did not expose a literal raw recursive directory dump from the repository root in this session, so this file is the official working tree reference for architecture/governance and integration planning.
+
+==================================================
+TOP LEVEL (AUDITED / CONFIRMED)
+==================================================
+.
+├── README.md
+├── package.json
+├── tsconfig.json
+├── prisma/
+│   └── schema.prisma
+├── src/
+│   ├── app/
+│   ├── components/
+│   └── lib/
+├── .env.example
+├── OFFICIAL_STUDIO_WEBSITE_CONTRACT.txt
+└── REPOSITORY_TREE_REFERENCE.txt
+
+==================================================
+SRC TREE (AUDITED / CONFIRMED)
+==================================================
+src/
+├── app/
+│   ├── page.tsx
+│   ├── loja/
+│   │   ├── page.tsx
+│   │   └── [slug]/
+│   │       └── page.tsx
+│   ├── ips/
+│   │   └── page.tsx
+│   ├── ip/
+│   │   └── [slug]/
+│   │       └── page.tsx
+│   └── admin/
+│       ├── page.tsx
+│       ├── import/
+│       │   └── page.tsx
+│       └── api/
+│           └── (not confirmed under admin path in filesystem; route below is confirmed under src/app/api)
+├── app/api/
+│   └── admin/
+│       └── import-package/
+│           └── route.ts
+├── components/
+│   ├── admin-nav.tsx
+│   ├── brand/
+│   │   └── BrandLogos
+│   ├── product-card.tsx
+│   ├── publication-card
+│   └── checkout-box
+└── lib/
+    ├── auth.ts
+    ├── auth-guards.ts
+    ├── prisma.ts
+    ├── publication-mapper.ts
+    ├── publication-schema.ts
+    ├── sync-commerce.ts
+    ├── pricing
+    ├── slug
+    └── auth-session
+
+==================================================
+PRISMA DATA MODEL TREE (AUDITED / CONFIRMED)
+==================================================
+prisma/
+└── schema.prisma
+    ├── StudioSettings
+    ├── IntellectualProperty
+    ├── Series
+    ├── Publication
+    ├── PublicationVariant
+    ├── PublicationAsset
+    ├── User
+    ├── Product
+    ├── CustomerLibrary
+    ├── Checkout
+    ├── CheckoutItem
+    ├── ProductType enum
+    ├── CheckoutProvider enum
+    ├── CheckoutStatus enum
+    └── UserRole enum
+
+==================================================
+FILES AUDITED DIRECTLY IN THIS SESSION
+==================================================
+- README.md
+- package.json
+- tsconfig.json
+- prisma/schema.prisma
+- .env.example
+- src/app/page.tsx
+- src/app/admin/page.tsx
+- src/app/admin/import/page.tsx
+- src/app/api/admin/import-package/route.ts
+- src/app/loja/page.tsx
+- src/app/loja/[slug]/page.tsx
+- src/app/ips/page.tsx
+- src/app/ip/[slug]/page.tsx
+- src/components/admin-nav.tsx
+- src/components/product-card.tsx
+- src/lib/prisma.ts
+- src/lib/auth-guards.ts
+- src/lib/auth.ts
+- src/lib/publication-schema.ts
+- src/lib/sync-commerce.ts
+- src/lib/publication-mapper.ts
+
+==================================================
+ARCHITECTURAL READING OF THIS TREE
+==================================================
+- Website is a public Next.js application.
+- Public rendering lives in src/app.
+- Admin rendering lives in src/app/admin.
+- Private import endpoint already exists under src/app/api/admin/import-package/route.ts.
+- Persistence layer is Prisma/PostgreSQL.
+- Catalog projection lives in the Prisma models and sync-commerce logic.
+- Website is already structured to act as the public/commercial consumer of Studio-origin publications.
+
+==================================================
+TREE GOVERNANCE RULE
+==================================================
+Before structural refactors:
+1. Keep this repository separate from Studio.
+2. Introduce official Studio intake before removing manual admin import fallback.
+3. Preserve public pages and green builds.
+4. Extend data model and ingest contract in small reversible steps.
+5. Keep Website as public/commercial projection, never source-of-truth editorial core.
