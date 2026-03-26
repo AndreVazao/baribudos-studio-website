@@ -65,27 +65,27 @@ model Publication {
 }
 
 model PublicationVariant {
-  id               String             @id @default(cuid())
+  id               String              @id @default(cuid())
   publicationIdRef String
-  variantId        String             @unique
+  variantId        String              @unique
   projectId        String
   projectSlug      String
   channel          String
   language         String
   format           String
-  slug             String             @unique
+  slug             String              @unique
   title            String
   subtitle         String?
   description      String
   shortDescription String?
-  price            Decimal?           @db.Decimal(10, 2)
+  price            Decimal?            @db.Decimal(10, 2)
   currency         String?
   payloadJson      Json
-  published        Boolean            @default(false)
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
+  published        Boolean             @default(false)
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
 
-  publication      Publication        @relation(fields: [publicationIdRef], references: [publicationId], onDelete: Cascade)
+  publication      Publication         @relation(fields: [publicationIdRef], references: [publicationId], onDelete: Cascade)
   assets           PublicationAsset[]
   products         Product[]
 }
@@ -102,35 +102,72 @@ model PublicationAsset {
 }
 
 model User {
-  id            String         @id @default(cuid())
+  id            String          @id @default(cuid())
   name          String?
-  email         String         @unique
+  email         String          @unique
   passwordHash  String
-  role          UserRole       @default(CUSTOMER)
-  isActive      Boolean        @default(true)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  role          UserRole        @default(CUSTOMER)
+  isActive      Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
 
   library       CustomerLibrary[]
   checkouts     Checkout[]
 }
 
 model Product {
-  id                   String            @id @default(cuid())
+  id                   String             @id @default(cuid())
   publicationVariantId String
-  slug                 String            @unique
+  slug                 String             @unique
   title                String
   type                 ProductType
   priceCents           Int
-  currency             String            @default("EUR")
-  active               Boolean           @default(false)
-  featured             Boolean           @default(false)
-  createdAt            DateTime          @default(now())
-  updatedAt            DateTime          @updatedAt
+  currency             String             @default("EUR")
+  active               Boolean            @default(false)
+  featured             Boolean            @default(false)
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
 
   variant              PublicationVariant @relation(fields: [publicationVariantId], references: [variantId], onDelete: Cascade)
   libraryEntries       CustomerLibrary[]
   checkoutItems        CheckoutItem[]
+}
+
+model BundleGroup {
+  id           String            @id @default(cuid())
+  groupId      String            @unique
+  slug         String            @unique
+  name         String
+  description  String?
+  groupType    String            @default("bundle")
+  priceCents   Int               @default(0)
+  currency     String            @default("EUR")
+  active       Boolean           @default(false)
+  featured     Boolean           @default(false)
+  sourceSystem String?
+  payloadJson  Json?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  items        BundleGroupItem[]
+}
+
+model BundleGroupItem {
+  id           String       @id @default(cuid())
+  bundleIdRef  String
+  productId    String?
+  productSlug  String?
+  title        String
+  type         String?
+  currency     String?
+  priceCents   Int          @default(0)
+  position     Int          @default(0)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  bundle       BundleGroup  @relation(fields: [bundleIdRef], references: [groupId], onDelete: Cascade)
+
+  @@index([bundleIdRef, position])
 }
 
 model CustomerLibrary {
