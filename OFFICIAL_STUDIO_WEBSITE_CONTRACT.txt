@@ -1,0 +1,192 @@
+OFFICIAL STUDIO ↔ WEBSITE CONTRACT
+Version: website_ingest_v1
+Status: OFFICIAL WORKING CONTRACT FOR MODULAR IMPLEMENTATION
+Repository: AndreVazao/baribudos-studio-website
+
+==================================================
+1. PRINCIPLE OF AUTHORITY
+==================================================
+1. Studio is private and is the official source of truth.
+2. Website is public and is the official public/commercial projection.
+3. Repositories remain separate.
+4. Databases remain separate.
+5. Website only exposes what Studio officially publishes.
+6. Website persists public/commercial state, not editorial authority.
+7. Studio contract has precedence when conflicts exist.
+
+==================================================
+2. WEBSITE ROLE
+==================================================
+The Website is responsible for:
+- public presentation
+- catalog persistence
+- IP pages
+- product pages
+- auth for customers/admins
+- checkout
+- customer library
+- order history
+- public/commercial operations
+
+The Website is NOT responsible for:
+- original editorial creation
+- editorial source-of-truth
+- final production authority
+- ad hoc payload invention outside the Studio contract
+
+==================================================
+3. OFFICIAL CONSUMPTION MODEL
+==================================================
+The Website consumes a versioned envelope from Studio.
+The Website validates that envelope.
+The Website persists a projection of that envelope.
+The Website returns a receipt/result to Studio.
+
+No repository fusion.
+No shared database.
+No direct editorial mutation in Website as final authority.
+
+==================================================
+4. OFFICIAL INPUT CONTRACT
+==================================================
+Envelope name:
+website_ingest_v1
+
+Required top-level fields:
+- schema_version
+- publication_id
+- variant_id
+- project_id
+- project_version
+- published_at
+- checksum
+- payload
+- related_variants
+- related_projects
+
+Supported optional top-level extensions:
+- asset_manifest
+- branding_pack
+- marketplace_visuals
+- sync_metadata
+- publish_reason
+- source_runtime
+
+==================================================
+5. REQUIRED PAYLOAD SHAPE
+==================================================
+The payload consumed by Website must support, at minimum:
+- project_id
+- project_slug
+- ip_slug
+- ip_name
+- series_name
+- language
+- title
+- subtitle
+- description
+- short_description
+- formats
+- price
+- currency
+- channel
+- assets
+- seo
+- characters
+- themes
+- values
+- authors
+- badges
+- buy_links
+
+Required Website assets support:
+- cover
+- logos
+- gallery
+- sample_pages
+- audiobook_preview
+- video_trailer
+- downloadable_files
+
+Website should also preserve richer Studio-origin payload information for public rendering evolution:
+- studio_logo
+- primary_logo
+- secondary_logos
+- hero_background
+- ornaments
+- promo_banners
+- trailer_thumbnail
+- character_cards
+- background_textures
+- social_cards
+- campaign_visuals
+
+SEO must support:
+- title
+- description
+- keywords
+- canonical_url
+- og_image
+
+==================================================
+6. OFFICIAL INTAKE RULES
+==================================================
+1. Official machine-to-machine intake uses x-studio-api-key.
+2. Manual admin import remains fallback/debug only.
+3. Intake must be schema validated before persistence.
+4. Persistence must be idempotent where possible.
+5. Receipt must be returned with saved identifiers and status.
+6. Schema evolution must be versioned and explicit.
+
+==================================================
+7. PERSISTENCE RULES
+==================================================
+The Website persists:
+- IntellectualProperty
+- Series
+- Publication
+- PublicationVariant
+- PublicationAsset
+- Product
+- Checkout / customer data / library data
+
+The Website does not own editorial truth.
+It owns the persisted public/commercial projection.
+
+==================================================
+8. OFFICIAL ENDPOINT INTENT
+==================================================
+Existing fallback/manual path:
+- /api/admin/import-package
+
+Official Studio intake path to implement/use:
+- /api/studio/publish
+
+Future expected paths:
+- /api/studio/unpublish
+- /api/studio/publish-status
+- /api/studio/republish
+
+==================================================
+9. PRODUCT MODEL RULE
+==================================================
+The Website should evolve toward preserving commercially meaningful variants by format.
+It should avoid collapsing multi-format publication truth into a single ambiguous commercial representation when separate sellable products are needed.
+
+==================================================
+10. IMPLEMENTATION SAFETY RULE
+==================================================
+Before major functional changes:
+- keep green builds stable
+- preserve current public/admin behavior where possible
+- add new official Studio intake before removing fallback paths
+- migrate in small reversible steps
+- never silently replace contract semantics
+
+==================================================
+11. OFFICIAL DECISION
+==================================================
+PRIVATE STUDIO PRODUCES AND CONTROLS.
+PUBLIC WEBSITE CONSUMES, PERSISTS, EXPOSES, SELLS, AND RESPONDS.
+
+This file is the official written contract anchor for the Website repository.
