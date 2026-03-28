@@ -21,6 +21,51 @@ export default async function RootLayout({
   return (
     <html lang="pt-PT">
       <body>
+        <style>{`
+          :root {
+            --bg: #f6efe1;
+            --panel: rgba(255, 255, 255, 0.82);
+            --panel-2: rgba(250, 244, 232, 0.92);
+            --line: rgba(64, 89, 70, 0.12);
+            --text: #203126;
+            --muted: #65786a;
+            --accent-1: #6fa86a;
+            --accent-2: #d9b65d;
+            --danger: #c65b5b;
+          }
+          body {
+            background: linear-gradient(180deg, #fffaf0 0%, var(--bg) 58%, #f2eadc 100%);
+            color: var(--text);
+          }
+          .nav a:hover {
+            background: rgba(111, 168, 106, 0.12);
+          }
+          .hero-copy p {
+            color: #546759;
+          }
+          .hero-visual,
+          .card,
+          .kpi-card,
+          .sidebar {
+            background: rgba(255, 255, 255, 0.82);
+            border-color: rgba(64, 89, 70, 0.12);
+          }
+          input,
+          select,
+          textarea {
+            background: rgba(255,255,255,0.9);
+            color: var(--text);
+            border-color: rgba(64,89,70,0.14);
+          }
+          .btn.secondary {
+            background: var(--panel-2);
+            color: var(--text);
+            border: 1px solid rgba(64,89,70,0.14);
+          }
+          .sidebar a {
+            color: #274632;
+          }
+        `}</style>
         <div className="wrapper">
           <header className="topbar">
             <div className="topbar-left">
