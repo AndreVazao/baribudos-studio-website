@@ -1,5 +1,6 @@
 import Link from "next/link";
 import BrandLogos from "@/components/brand/BrandLogos";
+import SagaHeroMedia from "@/components/brand/SagaHeroMedia";
 
 const BARIBUDOS_VISUALS = {
   heroVideo: "/media/sagas/baribudos/baribudos-hero-intro-main-20s.mp4",
@@ -41,36 +42,39 @@ export default function HomePage() {
           </div>
 
           <div style={{ display: "grid", gap: 12 }}>
-            <div style={{ borderRadius: 18, overflow: "hidden", border: "1px solid rgba(64,89,70,0.12)", background: "rgba(255,255,255,0.55)" }}>
-              <video
+            <div style={{ borderRadius: 18, overflow: "hidden", border: "1px solid rgba(64,89,70,0.12)", background: "rgba(255,255,255,0.55)", minHeight: 180 }}>
+              <SagaHeroMedia
                 src={BARIBUDOS_VISUALS.heroVideo}
-                autoPlay
-                muted
-                loop
-                playsInline
-                preload="metadata"
-                style={{ width: "100%", display: "block", aspectRatio: "16 / 9", objectFit: "cover" }}
+                aspectRatio="16 / 9"
+                label="Entrada principal da saga Baribudos"
               />
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: 12 }}>
-              <div style={{ padding: 12, borderRadius: 16, border: "1px solid rgba(64,89,70,0.12)", background: "rgba(255,255,255,0.55)" }}>
-                <p className="hero-note" style={{ marginTop: 0 }}>Saga em destaque</p>
-                <BrandLogos variant="ip-secondary" />
-                <p className="muted" style={{ marginBottom: 0 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1.15fr 0.85fr", gap: 12 }}>
+              <div style={{ padding: 12, borderRadius: 16, border: "1px solid rgba(64,89,70,0.12)", background: "rgba(255,255,255,0.55)", display: "grid", gap: 12 }}>
+                <div>
+                  <p className="hero-note" style={{ marginTop: 0 }}>Saga em destaque</p>
+                  <BrandLogos variant="ip-secondary" />
+                </div>
+                <p className="muted" style={{ margin: 0 }}>
                   A entrada visual da homepage já usa ativos próprios da saga Baribudos. Futuras sagas terão visual sets próprios sem mistura entre universos.
                 </p>
+                <div style={{ borderRadius: 14, overflow: "hidden", border: "1px solid rgba(64,89,70,0.12)", background: "rgba(255,255,255,0.6)", minHeight: 120 }}>
+                  <SagaHeroMedia
+                    src={BARIBUDOS_VISUALS.heroVideoAlt}
+                    aspectRatio="16 / 9"
+                    label="Variação visual da saga Baribudos"
+                  />
+                </div>
               </div>
 
-              <div style={{ borderRadius: 16, overflow: "hidden", border: "1px solid rgba(64,89,70,0.12)", background: "rgba(255,255,255,0.55)" }}>
-                <video
+              <div style={{ borderRadius: 16, overflow: "hidden", border: "1px solid rgba(64,89,70,0.12)", background: "rgba(255,255,255,0.55)", minHeight: 188 }}>
+                <SagaHeroMedia
                   src={BARIBUDOS_VISUALS.mobileTeaser}
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                  preload="metadata"
-                  style={{ width: "100%", display: "block", aspectRatio: "9 / 16", objectFit: "cover", maxHeight: 188, margin: "0 auto" }}
+                  aspectRatio="9 / 16"
+                  label="Teaser mobile da saga Baribudos"
+                  mode="portrait"
+                  maxHeight={188}
                 />
               </div>
             </div>
