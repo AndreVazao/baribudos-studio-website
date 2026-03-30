@@ -14,7 +14,11 @@ export async function GET(request: Request) {
         include: {
           variant: {
             include: {
-              publication: true,
+              publication: {
+                include: {
+                  ip: true,
+                },
+              },
             },
           },
         },
@@ -76,4 +80,4 @@ export async function GET(request: Request) {
       { status: 400 }
     );
   }
-}
+                                         }
