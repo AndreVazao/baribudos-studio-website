@@ -1,12 +1,19 @@
 import { NextResponse } from "next/server";
-import { getSagaVisualSet } from "@/lib/saga-visual-sets";
+import { prisma } from "@/lib/prisma";
+import { getLocalSagaVisualSet, normalizeSagaVisualSet } from "@/lib/saga-visual-sets";
 
 export async function GET(
   _request: Request,
   { params }: { params: { sagaSlug: string } }
 ) {
   const sagaSlug = String(params?.sagaSlug || "").trim().toLowerCase();
-  const visualSet = getSagaVisualSet(sagaSlug);
+
+  const persisted = await prisma.sagaVisualSet.findFirst({
+    where: { sagaSlug, active: true },
+    orderBy: { updatedAt: "desc" },
+  });
+
+  const visualSet = normalizeSagaVisualSet(persisted?.payloadJson) ?? getLocalSagaVisualSet(sagaSlug);
 
   if (!visualSet) {
     return NextResponse.json(
@@ -18,5 +25,6 @@ export async function GET(
   return NextResponse.json({
     ok: true,
     item: visualSet,
+    source: persisted ? "database" : "fallback_local",
   });
 }

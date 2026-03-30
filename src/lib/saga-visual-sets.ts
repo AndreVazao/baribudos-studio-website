@@ -15,7 +15,7 @@ export type SagaVisualSet = {
   rotation_policy: Record<string, string[] | boolean>;
 };
 
-const SAGA_VISUAL_SETS: SagaVisualSet[] = [
+const LOCAL_SAGA_VISUAL_SETS: SagaVisualSet[] = [
   {
     id: "baribudos-v1",
     saga_slug: "baribudos",
@@ -48,11 +48,31 @@ const SAGA_VISUAL_SETS: SagaVisualSet[] = [
   },
 ];
 
-export function listSagaVisualSets(): SagaVisualSet[] {
-  return SAGA_VISUAL_SETS.filter((item) => item.active);
+export function normalizeSagaVisualSet(value: any): SagaVisualSet | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  return {
+    id: String(value.id || value.visual_set_id || "").trim(),
+    saga_slug: String(value.saga_slug || value.sagaSlug || "").trim().toLowerCase(),
+    display_name: String(value.display_name || value.displayName || "").trim(),
+    active: Boolean(value.active),
+    version: Number(value.version || 1),
+    source_of_truth: String(value.source_of_truth || value.sourceSystem || "studio").trim() || "studio",
+    slots: value.slots && typeof value.slots === "object" ? value.slots : {},
+    rotation_policy:
+      value.rotation_policy && typeof value.rotation_policy === "object"
+        ? value.rotation_policy
+        : {},
+  };
 }
 
-export function getSagaVisualSet(sagaSlug: string): SagaVisualSet | null {
+export function listLocalSagaVisualSets(): SagaVisualSet[] {
+  return LOCAL_SAGA_VISUAL_SETS.filter((item) => item.active);
+}
+
+export function getLocalSagaVisualSet(sagaSlug: string): SagaVisualSet | null {
   const target = String(sagaSlug || "").trim().toLowerCase();
-  return listSagaVisualSets().find((item) => item.saga_slug === target) ?? null;
+  return listLocalSagaVisualSets().find((item) => item.saga_slug === target) ?? null;
 }

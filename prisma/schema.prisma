@@ -170,6 +170,19 @@ model BundleGroupItem {
   @@index([bundleIdRef, position])
 }
 
+model SagaVisualSet {
+  id           String   @id @default(cuid())
+  visualSetId  String   @unique
+  sagaSlug     String   @unique
+  displayName  String
+  active       Boolean  @default(false)
+  version      Int      @default(1)
+  sourceSystem String?
+  payloadJson  Json
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
 model CustomerLibrary {
   id          String   @id @default(cuid())
   userId      String
