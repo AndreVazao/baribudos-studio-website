@@ -1,0 +1,19 @@
+SAGA_SLUG=baribudos
+DISPLAY_NAME=Baribudos
+VERSION=1
+
+HERO_VIDEO= /media/sagas/baribudos/baribudos-hero-intro-main-20s.mp4
+HERO_VIDEO_ALT= /media/sagas/baribudos/baribudos-hero-intro-alt-13s.mp4
+MOBILE_TEASER= /media/sagas/baribudos/baribudos-mobile-teaser-vertical-5s.mp4
+
+HERO_ROTATION=hero_video,hero_video_alt
+MOBILE_ROTATION=mobile_teaser
+CROSS_SAGA_MIX=false
+
+RULES:
+- Ao abrir páginas/entradas da saga Baribudos, usar apenas assets da saga Baribudos.
+- Nunca misturar assets de sagas diferentes.
+- Hero principal default = hero_video.
+- Hero alternativo = hero_video_alt.
+- Mobile teaser = mobile_teaser.
+- Uso recomendado: autoplay muted loop playsinline.
