@@ -41,11 +41,18 @@ export const websitePayloadSchema = z.object({
 
 export const publicationIngestSchema = z.object({
   ok: z.boolean().default(true),
+  schema_version: z.string().optional().default("website_ingest_v1"),
   publication_id: z.string(),
   variant_id: z.string(),
+  project_version: z.string().optional().default(""),
+  published_at: z.string().optional().default(""),
+  checksum: z.string().optional().default(""),
   payload: websitePayloadSchema,
   related_variants: z.array(z.any()).optional().default([]),
   related_projects: z.array(z.any()).optional().default([]),
+  asset_manifest: z.any().optional().nullable(),
+  branding_pack: z.any().optional().nullable(),
+  marketplace_visuals: z.any().optional().nullable(),
 });
 
 export type PublicationIngestInput = z.infer<typeof publicationIngestSchema>;

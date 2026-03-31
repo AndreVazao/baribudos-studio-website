@@ -39,6 +39,12 @@ export async function syncPublicationToCommerce(input: PublicationIngestInput) {
       payloadJson: input,
       ipId: ip.id,
       seriesId: series?.id ?? null,
+      warningsJson: {
+        schema_version: input.schema_version,
+        checksum: input.checksum,
+        project_version: input.project_version,
+        published_at: input.published_at,
+      },
     },
     create: {
       publicationId: input.publication_id,
@@ -49,6 +55,12 @@ export async function syncPublicationToCommerce(input: PublicationIngestInput) {
       sourceSystem: "Baribudos Studio",
       status: "published",
       payloadJson: input,
+      warningsJson: {
+        schema_version: input.schema_version,
+        checksum: input.checksum,
+        project_version: input.project_version,
+        published_at: input.published_at,
+      },
       ipId: ip.id,
       seriesId: series?.id ?? null,
     },
@@ -71,7 +83,15 @@ export async function syncPublicationToCommerce(input: PublicationIngestInput) {
       shortDescription: payload.short_description,
       price: payload.price,
       currency: payload.currency,
-      payloadJson: payload,
+      payloadJson: {
+        ...payload,
+        _studio: {
+          schema_version: input.schema_version,
+          checksum: input.checksum,
+          project_version: input.project_version,
+          published_at: input.published_at,
+        },
+      },
       published: true,
       publicationIdRef: publication.publicationId,
     },
@@ -90,7 +110,15 @@ export async function syncPublicationToCommerce(input: PublicationIngestInput) {
       shortDescription: payload.short_description,
       price: payload.price,
       currency: payload.currency,
-      payloadJson: payload,
+      payloadJson: {
+        ...payload,
+        _studio: {
+          schema_version: input.schema_version,
+          checksum: input.checksum,
+          project_version: input.project_version,
+          published_at: input.published_at,
+        },
+      },
       published: true,
     },
   });
