@@ -1,0 +1,33 @@
+VISUAL_SETS_VALIDATION_CHECKLIST
+
+BRANCH
+- feat/website-hero-runtime-polish-v1
+
+CHECK_1_PRISMA
+- Garantir que o schema contém o modelo SagaVisualSet
+- Garantir que a migration 20260330_add_saga_visual_sets existe
+- Validar que o ambiente do Website consegue aplicar a migration
+
+CHECK_2_PRIVATE_ENDPOINTS
+- POST /api/studio/admin/visual-sets/upsert
+- GET /api/studio/status/visual-sets
+
+CHECK_3_PUBLIC_ENDPOINTS
+- GET /api/visual-sets
+- GET /api/visual-sets/baribudos
+
+CHECK_4_EXPECTED_RUNTIME
+- Sem registos na DB -> source=fallback_local
+- Com registos persistidos -> source=database
+- Nunca misturar sagas diferentes
+
+CHECK_5_STUDIO_FLOW
+- Studio consegue consultar status
+- Studio consegue publicar 1 visual set
+- Studio consegue publicar todos os visual sets
+- Reconcile reflete o estado correto
+
+CHECK_6_HOMEPAGE
+- Hero sem caixas vazias
+- Fallback visual funciona quando vídeo falhar
+- Baribudos mantém identidade própria
