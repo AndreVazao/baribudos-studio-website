@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { assertStudioApiKey } from "@/lib/auth";
+import { assertStudioApiKey, asHttpErrorStatus } from "@/lib/auth";
 
 export async function GET(request: Request) {
   try {
     assertStudioApiKey(request);
 
     const url = new URL(request.url);
-    const limit = Math.min(Number(url.searchParams.get("limit") || "25"), 100);
+    const limit = Math.max(1, Math.min(Number(url.searchParams.get("limit") || "25"), 100));
     const onlyActive = url.searchParams.get("active") === "1";
 
     const products = await prisma.product.findMany({
@@ -72,7 +72,7 @@ export async function GET(request: Request) {
         ok: false,
         error: error instanceof Error ? error.message : "Erro interno.",
       },
-      { status: 400 }
+      { status: asHttpErrorStatus(error, 400) }
     );
   }
 }

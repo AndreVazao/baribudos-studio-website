@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { assertStudioApiKey } from "@/lib/auth";
+import { assertStudioApiKey, asHttpErrorStatus } from "@/lib/auth";
 import { publicationIngestSchema } from "@/lib/publication-schema";
 import { syncPublicationToCommerce } from "@/lib/sync-commerce";
 
@@ -32,7 +32,7 @@ export async function POST(request: Request) {
         ok: false,
         error: error instanceof Error ? error.message : "Erro interno.",
       },
-      { status: 400 }
+      { status: asHttpErrorStatus(error, 400) }
     );
   }
 }
