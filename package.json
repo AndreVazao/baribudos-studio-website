@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "prisma generate && next build",
     "start": "next start",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "typecheck": "tsc --noEmit",
+    "ci:build": "prisma generate && next build"
   },
   "dependencies": {
     "@prisma/client": "^6.6.0",

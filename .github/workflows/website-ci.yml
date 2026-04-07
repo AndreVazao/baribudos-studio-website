@@ -1,0 +1,52 @@
+name: Website CI
+
+on:
+  push:
+    branches:
+      - main
+      - feat/**
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      DATABASE_URL: postgresql://user:password@localhost:5432/baribudos
+      DIRECT_URL: postgresql://user:password@localhost:5432/baribudos
+      NEXT_PUBLIC_SITE_URL: https://example.com
+      STUDIO_PUBLISH_API_KEY: ci-studio-key
+      ADMIN_PANEL_KEY: ci-admin-key
+      STRIPE_SECRET_KEY: stripe-secret-placeholder
+      STRIPE_WEBHOOK_SECRET: stripe-webhook-placeholder
+      PAYPAL_CLIENT_ID: paypal-client-placeholder
+      PAYPAL_CLIENT_SECRET: paypal-secret-placeholder
+      PAYPAL_MODE: sandbox
+      LIBRARY_TOKEN_SECRET: ci-library-secret
+      AUTH_COOKIE_NAME: baribudos_session
+      AUTH_JWT_SECRET: ci-auth-secret
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install --no-fund --no-audit
+
+      - name: Secret hygiene
+        run: node ./scripts/check-secret-hygiene.mjs
+
+      - name: Prisma generate
+        run: npx prisma generate
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run ci:build
