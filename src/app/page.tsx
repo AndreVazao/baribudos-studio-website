@@ -4,13 +4,21 @@ import SagaHeroMedia from "@/components/brand/SagaHeroMedia";
 import { prisma } from "@/lib/prisma";
 import { getLocalSagaVisualSet, normalizeSagaVisualSet } from "@/lib/saga-visual-sets";
 
-export default async function HomePage() {
-  const persisted = await prisma.sagaVisualSet.findFirst({
-    where: { sagaSlug: "baribudos", active: true },
-    orderBy: { updatedAt: "desc" },
-  });
+async function loadHomepageVisualSet() {
+  try {
+    const persisted = await prisma.sagaVisualSet.findFirst({
+      where: { sagaSlug: "baribudos", active: true },
+      orderBy: { updatedAt: "desc" },
+    });
 
-  const visualSet = normalizeSagaVisualSet(persisted?.payloadJson) ?? getLocalSagaVisualSet("baribudos");
+    return normalizeSagaVisualSet(persisted?.payloadJson) ?? getLocalSagaVisualSet("baribudos");
+  } catch {
+    return getLocalSagaVisualSet("baribudos");
+  }
+}
+
+export default async function HomePage() {
+  const visualSet = await loadHomepageVisualSet();
 
   const heroVideo = visualSet?.slots?.hero_video?.path || "/media/sagas/baribudos/baribudos-hero-intro-main-20s.mp4";
   const heroVideoAlt = visualSet?.slots?.hero_video_alt?.path || "/media/sagas/baribudos/baribudos-hero-intro-alt-13s.mp4";
