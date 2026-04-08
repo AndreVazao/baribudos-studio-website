@@ -1,6 +1,7 @@
 import Link from "next/link";
 import BrandLogos from "@/components/brand/BrandLogos";
 import SagaHeroMedia from "@/components/brand/SagaHeroMedia";
+import ProductCard from "@/components/product-card";
 import { prisma } from "@/lib/prisma";
 import { getLocalSagaVisualSet, normalizeSagaVisualSet } from "@/lib/saga-visual-sets";
 
@@ -17,8 +18,59 @@ async function loadHomepageVisualSet() {
   }
 }
 
+async function loadFeaturedProducts() {
+  try {
+    return await prisma.product.findMany({
+      where: { active: true },
+      orderBy: [{ featured: "desc" }, { createdAt: "desc" }],
+      take: 3,
+      include: {
+        variant: {
+          include: {
+            assets: true,
+          },
+        },
+      },
+    });
+  } catch {
+    return [];
+  }
+}
+
+const trustItems = [
+  "Checkout imediato com Stripe e PayPal",
+  "Catálogo alimentado pelo Studio oficial",
+  "Assets comerciais como capa, trailer e preview quando existirem",
+  "Estrutura pronta para crescer para novos universos",
+];
+
+const receiveItems = [
+  "Produto editorial organizado por variante comercial",
+  "Entrega associada ao email usado na compra",
+  "Página de produto com contexto, formatos e assets",
+  "Acesso a uma montra oficial ligada ao universo Baribudos",
+];
+
+const faqItems = [
+  {
+    question: "O que encontro aqui?",
+    answer: "Produtos editoriais e comerciais vindos diretamente do Studio, preparados para apresentação e venda no Website.",
+  },
+  {
+    question: "Posso comprar com cartão ou PayPal?",
+    answer: "Sim. O Website já está preparado para checkout com Stripe e PayPal.",
+  },
+  {
+    question: "O catálogo pode crescer?",
+    answer: "Sim. A base está pronta para novas sagas, novos formatos e novos produtos sem reestruturar o Website.",
+  },
+];
+
 export default async function HomePage() {
-  const visualSet = await loadHomepageVisualSet();
+  const [visualSet, featuredProducts] = await Promise.all([
+    loadHomepageVisualSet(),
+    loadFeaturedProducts(),
+  ]);
 
   const heroVideo = visualSet?.slots?.hero_video?.path || "/media/sagas/baribudos/baribudos-hero-intro-main-20s.mp4";
   const heroVideoAlt = visualSet?.slots?.hero_video_alt?.path || "/media/sagas/baribudos/baribudos-hero-intro-alt-13s.mp4";
@@ -32,21 +84,37 @@ export default async function HomePage() {
             <BrandLogos variant="studio-primary" priority />
           </div>
 
-          <h1>O Baribudos Studio cria universos. O Website organiza, apresenta e vende.</h1>
+          <p className="hero-kicker">Histórias digitais, audiobooks e universos prontos para descobrir</p>
+          <h1>Entra no universo Baribudos e compra histórias feitas para prender crianças e famílias.</h1>
 
           <p>
-            Plataforma editorial multi-IP para publicar, apresentar e vender histórias digitais,
-            eBooks, audiobooks e séries. O Studio é a origem oficial do conteúdo. O Website é a
-            camada pública, comercial e de distribuição.
+            O Studio cria. O Website entrega o melhor do catálogo ao público final. Aqui tens histórias,
+            trailers, previews e formatos prontos para compra imediata, com espaço para crescer para
+            novas sagas, novas personagens e novas linhas editoriais.
           </p>
 
           <div className="hero-actions">
-            <Link href="/ips" className="btn">
-              Explorar IPs
+            <Link href="/loja" className="btn">
+              Comprar agora
             </Link>
-            <Link href="/loja" className="btn secondary">
-              Abrir loja
+            <Link href="/ips" className="btn secondary">
+              Explorar universos
             </Link>
+          </div>
+
+          <div className="hero-proof-grid">
+            <div className="hero-proof-card">
+              <strong>Compra direta</strong>
+              <span>Loja pronta para Stripe e PayPal.</span>
+            </div>
+            <div className="hero-proof-card">
+              <strong>Previews reais</strong>
+              <span>Trailer, áudio e capa onde existirem assets.</span>
+            </div>
+            <div className="hero-proof-card">
+              <strong>Escala editorial</strong>
+              <span>Hoje Baribudos, amanhã novas sagas.</span>
+            </div>
           </div>
         </div>
 
@@ -90,8 +158,8 @@ export default async function HomePage() {
                   <BrandLogos variant="ip-secondary" />
                 </div>
                 <p className="muted" style={{ margin: 0 }}>
-                  A entrada visual da homepage já usa ativos próprios da saga Baribudos. Futuras
-                  sagas terão visual sets próprios sem mistura entre universos.
+                  A homepage já mostra ativos próprios do universo Baribudos e está pronta para receber
+                  novos visual sets por saga sem mistura entre marcas.
                 </p>
                 <div
                   style={{
@@ -132,33 +200,101 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {featuredProducts.length ? (
+        <section className="section">
+          <div className="section-header">
+            <div>
+              <h2>Destaques prontos para vender</h2>
+              <p>Produtos ativos e comercialmente prontos, diretamente alimentados pelo Studio.</p>
+            </div>
+            <Link href="/loja" className="btn secondary">
+              Ver loja completa
+            </Link>
+          </div>
+
+          <div className="grid">
+            {featuredProducts.map((product) => (
+              <ProductCard
+                key={product.id}
+                slug={product.slug}
+                title={product.title}
+                description={(product.variant.payloadJson as any)?.short_description || (product.variant.payloadJson as any)?.description || null}
+                language={product.variant.language || (product.variant.payloadJson as any)?.language || product.currency}
+                amountCents={product.priceCents}
+                currency={product.currency}
+                kind={product.type}
+                coverUrl={product.variant.assets.find((asset) => asset.role === "COVER")?.fileUrl || null}
+                featured={product.featured}
+              />
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       <section className="section">
         <div className="section-header">
           <div>
-            <h2>Como esta plataforma está pensada</h2>
-            <p>Separação limpa entre produção, catálogo e comércio.</p>
+            <h2>O que recebes deste Website</h2>
+            <p>Menos discurso técnico, mais valor percebido e mais clareza para comprar.</p>
+          </div>
+        </div>
+
+        <div className="bullet-grid">
+          {receiveItems.map((item) => (
+            <div key={item} className="bullet-card">
+              {item}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="section trust-section-card">
+        <div className="section-header">
+          <div>
+            <h2>Porque dá confiança comprar aqui</h2>
+            <p>A montra pública está ligada ao Studio oficial e preparada para crescer sem perder coerência.</p>
+          </div>
+        </div>
+
+        <div className="bullet-grid">
+          {trustItems.map((item) => (
+            <div key={item} className="bullet-card">
+              {item}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="section-header">
+          <div>
+            <h2>Perguntas rápidas antes de comprar</h2>
+            <p>Bloco curto para reduzir atrito e aumentar confiança.</p>
           </div>
         </div>
 
         <div className="grid">
-          <article className="card">
-            <h3>Studio</h3>
-            <p className="muted">Cria histórias, imagens, ilustrações, capas, variantes e assets.</p>
-          </article>
+          {faqItems.map((item) => (
+            <article key={item.question} className="card faq-card">
+              <h3>{item.question}</h3>
+              <p className="muted">{item.answer}</p>
+            </article>
+          ))}
+        </div>
+      </section>
 
-          <article className="card">
-            <h3>Website</h3>
-            <p className="muted">
-              Recebe payloads congelados, organiza o catálogo, apresenta e vende.
-            </p>
-          </article>
-
-          <article className="card">
-            <h3>Escala multi-IP</h3>
-            <p className="muted">
-              Hoje Baribudos. Amanhã novas sagas, novos universos e novas linhas editoriais.
-            </p>
-          </article>
+      <section className="section sales-cta-strip">
+        <div>
+          <p className="hero-kicker">Pronto para comprar</p>
+          <h2 style={{ margin: 0 }}>Segue para a loja e fecha a compra com menos fricção.</h2>
+        </div>
+        <div className="hero-actions" style={{ marginTop: 0 }}>
+          <Link href="/loja" className="btn">
+            Ir para a loja
+          </Link>
+          <Link href="/ips" className="btn secondary">
+            Ver universos
+          </Link>
         </div>
       </section>
     </main>
