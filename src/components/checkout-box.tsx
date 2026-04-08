@@ -77,6 +77,11 @@ export default function CheckoutBox({
         <div className="bullet-card">Sem passos desnecessários</div>
       </div>
 
+      <div className="checkout-trust-box">
+        <strong>Antes de pagar</strong>
+        <span>Confirma o email, escolhe o método e fechas a compra no fluxo oficial do provedor.</span>
+      </div>
+
       <div style={{ display: "grid", gap: 12, marginTop: 12 }}>
         <button
           className="btn"

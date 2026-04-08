@@ -37,6 +37,35 @@ async function loadFeaturedProducts() {
   }
 }
 
+const trustItems = [
+  "Checkout imediato com Stripe e PayPal",
+  "Catálogo alimentado pelo Studio oficial",
+  "Assets comerciais como capa, trailer e preview quando existirem",
+  "Estrutura pronta para crescer para novos universos",
+];
+
+const receiveItems = [
+  "Produto editorial organizado por variante comercial",
+  "Entrega associada ao email usado na compra",
+  "Página de produto com contexto, formatos e assets",
+  "Acesso a uma montra oficial ligada ao universo Baribudos",
+];
+
+const faqItems = [
+  {
+    question: "O que encontro aqui?",
+    answer: "Produtos editoriais e comerciais vindos diretamente do Studio, preparados para apresentação e venda no Website.",
+  },
+  {
+    question: "Posso comprar com cartão ou PayPal?",
+    answer: "Sim. O Website já está preparado para checkout com Stripe e PayPal.",
+  },
+  {
+    question: "O catálogo pode crescer?",
+    answer: "Sim. A base está pronta para novas sagas, novos formatos e novos produtos sem reestruturar o Website.",
+  },
+];
+
 export default async function HomePage() {
   const [visualSet, featuredProducts] = await Promise.all([
     loadHomepageVisualSet(),
@@ -205,26 +234,67 @@ export default async function HomePage() {
       <section className="section">
         <div className="section-header">
           <div>
-            <h2>Porque isto pode vender bem</h2>
-            <p>Não é só um catálogo. É uma máquina editorial ligada ao Studio.</p>
+            <h2>O que recebes deste Website</h2>
+            <p>Menos discurso técnico, mais valor percebido e mais clareza para comprar.</p>
+          </div>
+        </div>
+
+        <div className="bullet-grid">
+          {receiveItems.map((item) => (
+            <div key={item} className="bullet-card">
+              {item}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="section trust-section-card">
+        <div className="section-header">
+          <div>
+            <h2>Porque dá confiança comprar aqui</h2>
+            <p>A montra pública está ligada ao Studio oficial e preparada para crescer sem perder coerência.</p>
+          </div>
+        </div>
+
+        <div className="bullet-grid">
+          {trustItems.map((item) => (
+            <div key={item} className="bullet-card">
+              {item}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="section-header">
+          <div>
+            <h2>Perguntas rápidas antes de comprar</h2>
+            <p>Bloco curto para reduzir atrito e aumentar confiança.</p>
           </div>
         </div>
 
         <div className="grid">
-          <article className="card sales-card">
-            <h3>Origem oficial do conteúdo</h3>
-            <p className="muted">Tudo nasce no Studio, entra congelado no Website e mantém consistência editorial.</p>
-          </article>
+          {faqItems.map((item) => (
+            <article key={item.question} className="card faq-card">
+              <h3>{item.question}</h3>
+              <p className="muted">{item.answer}</p>
+            </article>
+          ))}
+        </div>
+      </section>
 
-          <article className="card sales-card">
-            <h3>Assets para conversão</h3>
-            <p className="muted">Capas, trailers, previews de áudio e variantes comerciais podem ser explorados para aumentar compra.</p>
-          </article>
-
-          <article className="card sales-card">
-            <h3>Escala multi-IP</h3>
-            <p className="muted">A mesma base pode crescer para novas sagas, coleções sazonais e linhas premium.</p>
-          </article>
+      <section className="section sales-cta-strip">
+        <div>
+          <p className="hero-kicker">Pronto para comprar</p>
+          <h2 style={{ margin: 0 }}>Segue para a loja e fecha a compra com menos fricção.</h2>
+        </div>
+        <div className="hero-actions" style={{ marginTop: 0 }}>
+          <Link href="/loja" className="btn">
+            Ir para a loja
+          </Link>
+          <Link href="/ips" className="btn secondary">
+            Ver universos
+          </Link>
         </div>
       </section>
     </main>
