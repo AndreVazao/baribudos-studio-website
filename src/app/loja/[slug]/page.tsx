@@ -28,45 +28,52 @@ export default async function ProductDetailPage({
   const cover = product.variant.assets.find((a) => a.role === "COVER");
   const preview = product.variant.assets.find((a) => a.role === "AUDIOBOOK_PREVIEW");
   const trailer = product.variant.assets.find((a) => a.role === "VIDEO_TRAILER");
+  const highlights = [
+    payload.language ? `Idioma: ${payload.language}` : null,
+    Array.isArray(payload.formats) && payload.formats.length ? `Formatos: ${payload.formats.join(", ")}` : null,
+    product.type ? `Tipo: ${product.type}` : null,
+    "Compra imediata com Stripe ou PayPal",
+  ].filter(Boolean);
 
   return (
-    <main style={{ marginTop: 24 }}>
-      <div className="grid" style={{ gridTemplateColumns: "1.1fr 0.9fr" }}>
-        <section className="card">
-          <h1>{product.title}</h1>
-          <p className="muted">{payload.short_description || ""}</p>
-          <p>{payload.description}</p>
-
-          <p>
-            <strong>Idioma:</strong> {payload.language}
-          </p>
-          <p>
-            <strong>Formatos:</strong> {(payload.formats || []).join(", ")}
-          </p>
-
+    <main className="page-shell">
+      <div className="product-detail-layout">
+        <section className="card product-detail-main">
           {cover ? (
-            <p>
-              <a href={cover.fileUrl} target="_blank">
-                Ver capa
-              </a>
-            </p>
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={cover.fileUrl} alt={product.title} className="product-detail-cover" />
           ) : null}
 
-          {preview ? (
-            <p>
-              <a href={preview.fileUrl} target="_blank">
-                Ouvir preview
-              </a>
-            </p>
-          ) : null}
+          <div className="product-detail-copy">
+            <p className="hero-kicker">Produto oficial</p>
+            <h1>{product.title}</h1>
+            <p className="muted lead-text">{payload.short_description || "Conteúdo editorial pronto para leitura, audição ou coleção."}</p>
+            <p>{payload.description}</p>
 
-          {trailer ? (
-            <p>
-              <a href={trailer.fileUrl} target="_blank">
-                Ver trailer
-              </a>
-            </p>
-          ) : null}
+            <div className="bullet-grid">
+              {highlights.map((item) => (
+                <div key={item} className="bullet-card">
+                  {item}
+                </div>
+              ))}
+            </div>
+
+            <div className="asset-stack">
+              {preview ? (
+                <div className="asset-card">
+                  <strong>Preview áudio</strong>
+                  <audio controls src={preview.fileUrl} style={{ width: "100%" }} />
+                </div>
+              ) : null}
+
+              {trailer ? (
+                <div className="asset-card">
+                  <strong>Trailer</strong>
+                  <video controls src={trailer.fileUrl} style={{ width: "100%", borderRadius: 12 }} />
+                </div>
+              ) : null}
+            </div>
+          </div>
         </section>
 
         <CheckoutBox
@@ -78,4 +85,4 @@ export default async function ProductDetailPage({
       </div>
     </main>
   );
-      }
+}

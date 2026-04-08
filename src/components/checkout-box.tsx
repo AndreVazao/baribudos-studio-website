@@ -52,11 +52,13 @@ export default function CheckoutBox({
   }
 
   return (
-    <div className="card">
-      <h3>Comprar</h3>
-      <p>
+    <aside className="card checkout-card-strong">
+      <p className="hero-kicker">Compra segura</p>
+      <h3>{title}</h3>
+      <p className="checkout-price">
         <strong>{centsToEuro(amountCents, currency)}</strong>
       </p>
+      <p className="muted">Pagamento imediato com Stripe ou PayPal. O email serve para entrega e confirmação da compra.</p>
 
       <label>
         Email do cliente
@@ -68,6 +70,12 @@ export default function CheckoutBox({
           required
         />
       </label>
+
+      <div className="bullet-grid compact-bullets">
+        <div className="bullet-card">Checkout direto</div>
+        <div className="bullet-card">Entrega por email</div>
+        <div className="bullet-card">Sem passos desnecessários</div>
+      </div>
 
       <div style={{ display: "grid", gap: 12, marginTop: 12 }}>
         <button
@@ -86,7 +94,7 @@ export default function CheckoutBox({
         />
       </div>
 
-      {error ? <p style={{ color: "#ff9e9e", marginTop: 12 }}>{error}</p> : null}
-    </div>
+      {error ? <p className="error-text" style={{ marginTop: 12 }}>{error}</p> : null}
+    </aside>
   );
-          }
+}
