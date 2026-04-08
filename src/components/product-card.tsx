@@ -25,7 +25,7 @@ export default function ProductCard({
   featured = false,
 }: Props) {
   return (
-    <article className="card product-card-strong">
+    <article className="card product-card-strong product-card-premium">
       <div className="product-card-media">
         {coverUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -47,12 +47,14 @@ export default function ProductCard({
         <h3>{title}</h3>
         <p className="muted">{description || "História pronta para compra imediata."}</p>
 
+        <div className="product-card-promise">Compra rápida · apresentação oficial · catálogo ligado ao Studio</div>
+
         <div className="product-price-row">
           <strong>{centsToEuro(amountCents, currency)}</strong>
           <span className="muted">Compra direta</span>
         </div>
 
-        <Link href={`/loja/${slug}`} className="btn">
+        <Link href={`/loja/${slug}`} className="btn btn-wide">
           Ver produto
         </Link>
       </div>

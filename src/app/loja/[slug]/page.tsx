@@ -35,6 +35,20 @@ export default async function ProductDetailPage({
     "Compra imediata com Stripe ou PayPal",
   ].filter(Boolean);
 
+  const receiveItems = [
+    Array.isArray(payload.formats) && payload.formats.length ? `Recebes acesso ao formato ${payload.formats.join(", ")}` : "Recebes o produto na variante comercial ativa",
+    "Página oficial ligada ao universo editorial",
+    "Fluxo de compra curto, sem passos desnecessários",
+    "Entrega associada ao email usado no checkout",
+  ];
+
+  const trustItems = [
+    "Produto vindo do pipeline oficial do Studio",
+    "Checkout com provedores reconhecidos",
+    "Assets públicos apresentados na mesma página de compra",
+    "Estrutura pronta para mais edições e variantes",
+  ];
+
   return (
     <main className="page-shell">
       <div className="product-detail-layout">
@@ -57,6 +71,38 @@ export default async function ProductDetailPage({
                 </div>
               ))}
             </div>
+
+            <section className="info-panel-soft">
+              <div className="section-header" style={{ marginBottom: 12 }}>
+                <div>
+                  <h2>O que recebes</h2>
+                  <p>Resumo direto do valor entregue ao cliente.</p>
+                </div>
+              </div>
+              <div className="bullet-grid">
+                {receiveItems.map((item) => (
+                  <div key={item} className="bullet-card">
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="info-panel-soft">
+              <div className="section-header" style={{ marginBottom: 12 }}>
+                <div>
+                  <h2>Porque este produto passa confiança</h2>
+                  <p>Elementos de credibilidade sem floreados desnecessários.</p>
+                </div>
+              </div>
+              <div className="bullet-grid">
+                {trustItems.map((item) => (
+                  <div key={item} className="bullet-card">
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </section>
 
             <div className="asset-stack">
               {preview ? (

@@ -16,7 +16,7 @@ export default function PublicationCard({
   format,
 }: Props) {
   return (
-    <article className="card publication-card-strong">
+    <article className="card publication-card-strong publication-card-premium">
       <p className="hero-kicker">Publicação</p>
       <h3>{title}</h3>
       <p className="muted">{description || "Entrada editorial pronta para expansão comercial."}</p>
@@ -29,7 +29,7 @@ export default function PublicationCard({
         <div className="bullet-card">Pronta para catálogo</div>
         <div className="bullet-card">Ligada ao universo</div>
       </div>
-      <Link href={`/loja/${slug}`} className="btn secondary">
+      <Link href={`/loja/${slug}`} className="btn secondary btn-wide">
         Abrir produto
       </Link>
     </article>
