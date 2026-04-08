@@ -248,6 +248,8 @@ img {
   background: linear-gradient(180deg, rgba(45, 106, 79, 0.16), rgba(255,255,255,0.02));
 }
 
+.ip-showcase-card,
+.publication-card-strong,
 .product-card-strong {
   display: grid;
   gap: 14px;
