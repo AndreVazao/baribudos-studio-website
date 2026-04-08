@@ -37,6 +37,20 @@ async function loadFeaturedProducts() {
   }
 }
 
+async function loadCatalogStats() {
+  try {
+    const [ipCount, publicationCount, productCount] = await Promise.all([
+      prisma.intellectualProperty.count(),
+      prisma.publication.count(),
+      prisma.product.count({ where: { active: true } }),
+    ]);
+
+    return { ipCount, publicationCount, productCount };
+  } catch {
+    return { ipCount: 0, publicationCount: 0, productCount: 0 };
+  }
+}
+
 const trustItems = [
   "Checkout imediato com Stripe e PayPal",
   "Catálogo alimentado pelo Studio oficial",
@@ -66,10 +80,32 @@ const faqItems = [
   },
 ];
 
+const collectionItems = [
+  {
+    title: "Entrada rápida no universo",
+    text: "Coleção ideal para quem quer começar por uma compra simples e perceber o tom da marca.",
+    cta: "Ver produtos de entrada",
+    href: "/loja",
+  },
+  {
+    title: "Formatos para ouvir e ler",
+    text: "Páginas de produto preparadas para combinar leitura, trailer e preview áudio sempre que existirem assets.",
+    cta: "Explorar formatos",
+    href: "/loja",
+  },
+  {
+    title: "Universos em crescimento",
+    text: "A navegação por IP ajuda a vender não só um produto isolado, mas um mundo editorial inteiro.",
+    cta: "Explorar universos",
+    href: "/ips",
+  },
+];
+
 export default async function HomePage() {
-  const [visualSet, featuredProducts] = await Promise.all([
+  const [visualSet, featuredProducts, stats] = await Promise.all([
     loadHomepageVisualSet(),
     loadFeaturedProducts(),
+    loadCatalogStats(),
   ]);
 
   const heroVideo = visualSet?.slots?.hero_video?.path || "/media/sagas/baribudos/baribudos-hero-intro-main-20s.mp4";
@@ -200,6 +236,29 @@ export default async function HomePage() {
         </div>
       </section>
 
+      <section className="section">
+        <div className="section-header">
+          <div>
+            <h2>Catálogo vivo</h2>
+            <p>Números reais que ajudam a dar densidade e confiança à montra.</p>
+          </div>
+        </div>
+        <div className="kpi-grid">
+          <div className="kpi-card">
+            <span>IPs</span>
+            <strong>{stats.ipCount}</strong>
+          </div>
+          <div className="kpi-card">
+            <span>Publicações</span>
+            <strong>{stats.publicationCount}</strong>
+          </div>
+          <div className="kpi-card">
+            <span>Produtos ativos</span>
+            <strong>{stats.productCount}</strong>
+          </div>
+        </div>
+      </section>
+
       {featuredProducts.length ? (
         <section className="section">
           <div className="section-header">
@@ -230,6 +289,27 @@ export default async function HomePage() {
           </div>
         </section>
       ) : null}
+
+      <section className="section">
+        <div className="section-header">
+          <div>
+            <h2>Coleções e caminhos de compra</h2>
+            <p>Estrutura comercial simples para orientar quem chega sem saber o que escolher.</p>
+          </div>
+        </div>
+        <div className="grid">
+          {collectionItems.map((item) => (
+            <article key={item.title} className="card collection-card">
+              <p className="hero-kicker">Coleção editorial</p>
+              <h3>{item.title}</h3>
+              <p className="muted">{item.text}</p>
+              <Link href={item.href} className="btn secondary btn-wide">
+                {item.cta}
+              </Link>
+            </article>
+          ))}
+        </div>
+      </section>
 
       <section className="section">
         <div className="section-header">
