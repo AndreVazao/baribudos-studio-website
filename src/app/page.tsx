@@ -101,6 +101,28 @@ const collectionItems = [
   },
 ];
 
+const proofCards = [
+  {
+    title: "Montra oficial",
+    text: "O Website recebe publicações do Studio oficial, o que aumenta coerência entre catálogo, ativos e apresentação pública.",
+  },
+  {
+    title: "Compra sem fricção",
+    text: "O fluxo foi desenhado para reduzir passos e aproximar mais rapidamente o visitante do checkout.",
+  },
+  {
+    title: "Base para recorrência",
+    text: "A navegação por universo, produto e coleção prepara o terreno para futuras compras repetidas.",
+  },
+];
+
+const audienceCards = [
+  "Famílias que procuram histórias com identidade visual própria",
+  "Quem quer começar com uma compra simples e direta",
+  "Quem prefere descobrir primeiro o universo e só depois escolher produto",
+  "Quem valoriza capa, trailer e preview antes de fechar compra",
+];
+
 export default async function HomePage() {
   const [visualSet, featuredProducts, stats] = await Promise.all([
     loadHomepageVisualSet(),
@@ -314,6 +336,39 @@ export default async function HomePage() {
       <section className="section">
         <div className="section-header">
           <div>
+            <h2>Porque esta montra tem tração comercial</h2>
+            <p>Social proof estrutural sem inventar reviews falsas.</p>
+          </div>
+        </div>
+        <div className="grid">
+          {proofCards.map((item) => (
+            <article key={item.title} className="card proof-card">
+              <h3>{item.title}</h3>
+              <p className="muted">{item.text}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="section-header">
+          <div>
+            <h2>Ideal para</h2>
+            <p>Ajuda o visitante a perceber rapidamente se está no sítio certo.</p>
+          </div>
+        </div>
+        <div className="bullet-grid">
+          {audienceCards.map((item) => (
+            <div key={item} className="bullet-card">
+              {item}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="section-header">
+          <div>
             <h2>O que recebes deste Website</h2>
             <p>Menos discurso técnico, mais valor percebido e mais clareza para comprar.</p>
           </div>
@@ -342,6 +397,21 @@ export default async function HomePage() {
               {item}
             </div>
           ))}
+        </div>
+      </section>
+
+      <section className="section interest-strip">
+        <div>
+          <p className="hero-kicker">Queres acompanhar novidades</p>
+          <h2 style={{ margin: 0 }}>Guarda este Website e acompanha novas sagas, novos produtos e novas variantes.</h2>
+        </div>
+        <div className="hero-actions" style={{ marginTop: 0 }}>
+          <Link href="/loja" className="btn">
+            Ver catálogo agora
+          </Link>
+          <a href="mailto:contacto@baribudos.pt?subject=Interesse%20em%20novidades%20Baribudos" className="btn secondary">
+            Pedir novidades por email
+          </a>
         </div>
       </section>
 

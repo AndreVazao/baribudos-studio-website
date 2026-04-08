@@ -23,6 +23,12 @@ const collectionItems = [
   },
 ];
 
+const proofCards = [
+  "Produtos ativos ordenados para destacar o que está mais pronto para vender",
+  "Página de detalhe pensada para reduzir atrito antes do checkout",
+  "Camada editorial ligada a IPs para aumentar descoberta e recorrência",
+];
+
 export default async function LojaPage() {
   const products = await prisma.product.findMany({
     where: { active: true },
@@ -64,6 +70,22 @@ export default async function LojaPage() {
                 {item.cta}
               </Link>
             </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="section-header">
+          <div>
+            <h2>Porque esta loja está preparada para crescer</h2>
+            <p>Prova estrutural de organização comercial e editorial.</p>
+          </div>
+        </div>
+        <div className="bullet-grid">
+          {proofCards.map((item) => (
+            <div key={item} className="bullet-card">
+              {item}
+            </div>
           ))}
         </div>
       </section>

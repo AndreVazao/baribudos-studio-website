@@ -249,7 +249,8 @@ img {
 .sales-intro-card,
 .trust-section-card,
 .sales-cta-strip,
-.info-panel-soft {
+.info-panel-soft,
+.interest-strip {
   padding: 24px;
   border: 1px solid var(--line);
   border-radius: 24px;
@@ -261,7 +262,8 @@ img {
   gap: 12px;
 }
 
-.sales-cta-strip {
+.sales-cta-strip,
+.interest-strip {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -270,6 +272,7 @@ img {
 }
 
 .collection-card,
+.proof-card,
 .faq-card,
 .ip-showcase-card,
 .publication-card-strong,
@@ -604,7 +607,8 @@ th {
   .sales-intro-card,
   .trust-section-card,
   .sales-cta-strip,
-  .info-panel-soft {
+  .info-panel-soft,
+  .interest-strip {
     padding: 14px;
   }
 
