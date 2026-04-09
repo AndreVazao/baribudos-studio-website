@@ -3,11 +3,13 @@ import Image from "next/image";
 type Props = {
   variant?: "studio-primary" | "ip-secondary" | "badge";
   priority?: boolean;
+  size?: "default" | "hero";
 };
 
 export default function BrandLogos({
   variant = "studio-primary",
   priority = false,
+  size = "default",
 }: Props) {
   if (variant === "badge") {
     return (
@@ -37,12 +39,12 @@ export default function BrandLogos({
 
   return (
     <Image
-      className="brand-logo-studio"
+      className={size === "hero" ? "brand-logo-studio brand-logo-studio-hero" : "brand-logo-studio"}
       src="/brand/baribudos-studio-logo.png"
       alt="Baribudos Studio"
-      width={280}
-      height={110}
+      width={size === "hero" ? 380 : 280}
+      height={size === "hero" ? 150 : 110}
       priority={priority}
     />
   );
-      }
+}
