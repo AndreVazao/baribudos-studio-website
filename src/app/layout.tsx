@@ -46,7 +46,8 @@ export default async function RootLayout({
           .hero-visual,
           .card,
           .kpi-card,
-          .sidebar {
+          .sidebar,
+          .footer-shell {
             background: rgba(255, 255, 255, 0.82);
             border-color: rgba(64, 89, 70, 0.12);
           }
@@ -62,7 +63,8 @@ export default async function RootLayout({
             color: var(--text);
             border: 1px solid rgba(64,89,70,0.14);
           }
-          .sidebar a {
+          .sidebar a,
+          .footer-link {
             color: #274632;
           }
         `}</style>
@@ -82,6 +84,7 @@ export default async function RootLayout({
               <Link href="/ips">IPs</Link>
               <Link href="/colecoes">Coleções</Link>
               <Link href="/loja">Loja</Link>
+              <Link href="/faq">FAQ</Link>
 
               {user ? <Link href="/conta">Conta</Link> : <Link href="/login">Entrar</Link>}
 
@@ -90,6 +93,34 @@ export default async function RootLayout({
           </header>
 
           {children}
+
+          <footer className="footer-shell">
+            <div className="footer-grid">
+              <div className="footer-block">
+                <strong>Baribudos Studio</strong>
+                <p className="muted">Montra editorial e comercial preparada para crescer por universos, coleções e produtos.</p>
+              </div>
+
+              <div className="footer-block">
+                <strong>Explorar</strong>
+                <div className="footer-links">
+                  <Link href="/loja" className="footer-link">Loja</Link>
+                  <Link href="/ips" className="footer-link">IPs</Link>
+                  <Link href="/colecoes" className="footer-link">Coleções</Link>
+                  <Link href="/faq" className="footer-link">FAQ</Link>
+                </div>
+              </div>
+
+              <div className="footer-block">
+                <strong>Crescimento</strong>
+                <div className="footer-links">
+                  <a href="mailto:contacto@baribudos.pt?subject=Interesse%20em%20novidades%20Baribudos" className="footer-link">Receber novidades</a>
+                  <Link href="/loja" className="footer-link">Comprar agora</Link>
+                  <Link href="/ips" className="footer-link">Descobrir universos</Link>
+                </div>
+              </div>
+            </div>
+          </footer>
         </div>
       </body>
     </html>

@@ -250,7 +250,8 @@ img {
 .trust-section-card,
 .sales-cta-strip,
 .info-panel-soft,
-.interest-strip {
+.interest-strip,
+.footer-shell {
   padding: 24px;
   border: 1px solid var(--line);
   border-radius: 24px;
@@ -269,6 +270,30 @@ img {
   align-items: center;
   gap: 18px;
   flex-wrap: wrap;
+}
+
+.footer-shell {
+  margin: 32px 0 8px;
+}
+
+.footer-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.footer-block {
+  display: grid;
+  gap: 10px;
+}
+
+.footer-links {
+  display: grid;
+  gap: 8px;
+}
+
+.footer-link {
+  font-weight: 600;
 }
 
 .collection-card,
@@ -564,7 +589,8 @@ th {
 
   .hero-proof-grid,
   .product-detail-layout,
-  .compact-bullets {
+  .compact-bullets,
+  .footer-grid {
     grid-template-columns: 1fr;
   }
 
@@ -609,7 +635,8 @@ th {
   .trust-section-card,
   .sales-cta-strip,
   .info-panel-soft,
-  .interest-strip {
+  .interest-strip,
+  .footer-shell {
     padding: 14px;
   }
 
