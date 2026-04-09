@@ -32,6 +32,7 @@ export default async function ComingSoonPage() {
         badge: marketing?.teaser_badge || "Em breve",
         releaseLabel: marketing?.teaser_release_label || "Pré-lançamento",
         cover: marketing?.teaser_cover_url || variant.assets.find((asset) => asset.role === "COVER")?.fileUrl || null,
+        gallery: Array.isArray(marketing?.teaser_gallery) ? marketing.teaser_gallery : [],
       };
     })
     .filter(Boolean);
@@ -53,6 +54,8 @@ export default async function ComingSoonPage() {
               <h3>{item.title}</h3>
               <p className="muted">{item.subtitle}</p>
               <div className="bullet-card">{item.releaseLabel}</div>
+              {item.gallery?.length ? <div className="muted">Galeria teaser: {item.gallery.length} imagem(ns)</div> : null}
+              <Link href={`/novidades/${item.slug}`} className="btn btn-wide">Abrir teaser</Link>
               <Link href="/novidades" className="btn secondary btn-wide">Acompanhar novidades</Link>
             </article>
           ))}

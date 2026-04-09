@@ -23,6 +23,16 @@ export default async function NewsPage() {
       const publicState = String(marketing?.public_state || "").trim();
       const isNews = ["teaser_ready", "prelaunch_public", "launch_ready", "published"].includes(publicState) || variant.published;
       if (!isNews) return null;
+
+      const activeProduct = variant.products.find((product) => product.active);
+
+      return {
+        id: variant.id,
+        slug: variant.slug,
+        title: marketing?.teaser_headline || variant.title,
+        subtitle: marketing?.teaser_subtitle || variant.shortDescription || variant.description,
+        badge: marketing?.teaser_badge || (activeProduct ? "Já disponível" : "Novidade"),
+        href: activeProduct ? `/loja/${activeProduct.slug}` : `/novidades/${variant.slug}`,
       const activeProduct = variant.products.find((product) => product.active);
       return {
         id: variant.id,
