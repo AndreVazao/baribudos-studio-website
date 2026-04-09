@@ -23,7 +23,9 @@ export default async function NewsPage() {
       const publicState = String(marketing?.public_state || "").trim();
       const isNews = ["teaser_ready", "prelaunch_public", "launch_ready", "published"].includes(publicState) || variant.published;
       if (!isNews) return null;
+
       const activeProduct = variant.products.find((product) => product.active);
+
       return {
         id: variant.id,
         slug: variant.slug,
