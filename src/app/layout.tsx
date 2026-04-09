@@ -80,6 +80,7 @@ export default async function RootLayout({
               <Link href="/">Início</Link>
               <Link href="/studio">Studio</Link>
               <Link href="/ips">IPs</Link>
+              <Link href="/colecoes">Coleções</Link>
               <Link href="/loja">Loja</Link>
 
               {user ? <Link href="/conta">Conta</Link> : <Link href="/login">Entrar</Link>}
