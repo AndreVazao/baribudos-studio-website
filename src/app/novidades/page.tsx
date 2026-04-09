@@ -33,6 +33,13 @@ export default async function NewsPage() {
         subtitle: marketing?.teaser_subtitle || variant.shortDescription || variant.description,
         badge: marketing?.teaser_badge || (activeProduct ? "Já disponível" : "Novidade"),
         href: activeProduct ? `/loja/${activeProduct.slug}` : `/novidades/${variant.slug}`,
+      const activeProduct = variant.products.find((product) => product.active);
+      return {
+        id: variant.id,
+        title: marketing?.teaser_headline || variant.title,
+        subtitle: marketing?.teaser_subtitle || variant.shortDescription || variant.description,
+        badge: marketing?.teaser_badge || (activeProduct ? "Já disponível" : "Novidade"),
+        href: activeProduct ? `/loja/${activeProduct.slug}` : "/em-breve",
         cover: marketing?.teaser_cover_url || variant.assets.find((asset) => asset.role === "COVER")?.fileUrl || null,
       };
     })

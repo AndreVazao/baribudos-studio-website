@@ -56,6 +56,7 @@ export default async function ComingSoonPage() {
               <div className="bullet-card">{item.releaseLabel}</div>
               {item.gallery?.length ? <div className="muted">Galeria teaser: {item.gallery.length} imagem(ns)</div> : null}
               <Link href={`/novidades/${item.slug}`} className="btn btn-wide">Abrir teaser</Link>
+              <Link href="/novidades" className="btn secondary btn-wide">Acompanhar novidades</Link>
             </article>
           ))}
           {!items.length ? <div className="card">Sem pré-lançamentos públicos neste momento.</div> : null}
