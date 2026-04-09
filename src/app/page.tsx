@@ -37,6 +37,20 @@ async function loadFeaturedProducts() {
   }
 }
 
+async function loadCatalogStats() {
+  try {
+    const [ipCount, publicationCount, productCount] = await Promise.all([
+      prisma.intellectualProperty.count(),
+      prisma.publication.count(),
+      prisma.product.count({ where: { active: true } }),
+    ]);
+
+    return { ipCount, publicationCount, productCount };
+  } catch {
+    return { ipCount: 0, publicationCount: 0, productCount: 0 };
+  }
+}
+
 const trustItems = [
   "Checkout imediato com Stripe e PayPal",
   "Catálogo alimentado pelo Studio oficial",
@@ -66,10 +80,54 @@ const faqItems = [
   },
 ];
 
+const collectionItems = [
+  {
+    title: "Entrada rápida no universo",
+    text: "Coleção ideal para quem quer começar por uma compra simples e perceber o tom da marca.",
+    cta: "Ver produtos de entrada",
+    href: "/loja",
+  },
+  {
+    title: "Formatos para ouvir e ler",
+    text: "Páginas de produto preparadas para combinar leitura, trailer e preview áudio sempre que existirem assets.",
+    cta: "Explorar formatos",
+    href: "/loja",
+  },
+  {
+    title: "Universos em crescimento",
+    text: "A navegação por IP ajuda a vender não só um produto isolado, mas um mundo editorial inteiro.",
+    cta: "Explorar universos",
+    href: "/ips",
+  },
+];
+
+const proofCards = [
+  {
+    title: "Montra oficial",
+    text: "O Website recebe publicações do Studio oficial, o que aumenta coerência entre catálogo, ativos e apresentação pública.",
+  },
+  {
+    title: "Compra sem fricção",
+    text: "O fluxo foi desenhado para reduzir passos e aproximar mais rapidamente o visitante do checkout.",
+  },
+  {
+    title: "Base para recorrência",
+    text: "A navegação por universo, produto e coleção prepara o terreno para futuras compras repetidas.",
+  },
+];
+
+const audienceCards = [
+  "Famílias que procuram histórias com identidade visual própria",
+  "Quem quer começar com uma compra simples e direta",
+  "Quem prefere descobrir primeiro o universo e só depois escolher produto",
+  "Quem valoriza capa, trailer e preview antes de fechar compra",
+];
+
 export default async function HomePage() {
-  const [visualSet, featuredProducts] = await Promise.all([
+  const [visualSet, featuredProducts, stats] = await Promise.all([
     loadHomepageVisualSet(),
     loadFeaturedProducts(),
+    loadCatalogStats(),
   ]);
 
   const heroVideo = visualSet?.slots?.hero_video?.path || "/media/sagas/baribudos/baribudos-hero-intro-main-20s.mp4";
@@ -200,6 +258,29 @@ export default async function HomePage() {
         </div>
       </section>
 
+      <section className="section">
+        <div className="section-header">
+          <div>
+            <h2>Catálogo vivo</h2>
+            <p>Números reais que ajudam a dar densidade e confiança à montra.</p>
+          </div>
+        </div>
+        <div className="kpi-grid">
+          <div className="kpi-card">
+            <span>IPs</span>
+            <strong>{stats.ipCount}</strong>
+          </div>
+          <div className="kpi-card">
+            <span>Publicações</span>
+            <strong>{stats.publicationCount}</strong>
+          </div>
+          <div className="kpi-card">
+            <span>Produtos ativos</span>
+            <strong>{stats.productCount}</strong>
+          </div>
+        </div>
+      </section>
+
       {featuredProducts.length ? (
         <section className="section">
           <div className="section-header">
@@ -234,6 +315,60 @@ export default async function HomePage() {
       <section className="section">
         <div className="section-header">
           <div>
+            <h2>Coleções e caminhos de compra</h2>
+            <p>Estrutura comercial simples para orientar quem chega sem saber o que escolher.</p>
+          </div>
+        </div>
+        <div className="grid">
+          {collectionItems.map((item) => (
+            <article key={item.title} className="card collection-card">
+              <p className="hero-kicker">Coleção editorial</p>
+              <h3>{item.title}</h3>
+              <p className="muted">{item.text}</p>
+              <Link href={item.href} className="btn secondary btn-wide">
+                {item.cta}
+              </Link>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="section-header">
+          <div>
+            <h2>Porque esta montra tem tração comercial</h2>
+            <p>Social proof estrutural sem inventar reviews falsas.</p>
+          </div>
+        </div>
+        <div className="grid">
+          {proofCards.map((item) => (
+            <article key={item.title} className="card proof-card">
+              <h3>{item.title}</h3>
+              <p className="muted">{item.text}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="section-header">
+          <div>
+            <h2>Ideal para</h2>
+            <p>Ajuda o visitante a perceber rapidamente se está no sítio certo.</p>
+          </div>
+        </div>
+        <div className="bullet-grid">
+          {audienceCards.map((item) => (
+            <div key={item} className="bullet-card">
+              {item}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="section-header">
+          <div>
             <h2>O que recebes deste Website</h2>
             <p>Menos discurso técnico, mais valor percebido e mais clareza para comprar.</p>
           </div>
@@ -262,6 +397,21 @@ export default async function HomePage() {
               {item}
             </div>
           ))}
+        </div>
+      </section>
+
+      <section className="section interest-strip">
+        <div>
+          <p className="hero-kicker">Queres acompanhar novidades</p>
+          <h2 style={{ margin: 0 }}>Guarda este Website e acompanha novas sagas, novos produtos e novas variantes.</h2>
+        </div>
+        <div className="hero-actions" style={{ marginTop: 0 }}>
+          <Link href="/loja" className="btn">
+            Ver catálogo agora
+          </Link>
+          <a href="mailto:contacto@baribudos.pt?subject=Interesse%20em%20novidades%20Baribudos" className="btn secondary">
+            Pedir novidades por email
+          </a>
         </div>
       </section>
 

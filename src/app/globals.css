@@ -12,8 +12,8 @@
   --text: #eef4ee;
   --muted: #a8b6aa;
   --accent-1: #2d6a4f;
-  --accent-2: #d4af37;
-  --danger: #ff9e9e;
+  --accent-2: #d9b65d;
+  --danger: #c65b5b;
 }
 
 html,
@@ -249,7 +249,9 @@ img {
 .sales-intro-card,
 .trust-section-card,
 .sales-cta-strip,
-.info-panel-soft {
+.info-panel-soft,
+.interest-strip,
+.footer-shell {
   padding: 24px;
   border: 1px solid var(--line);
   border-radius: 24px;
@@ -261,7 +263,8 @@ img {
   gap: 12px;
 }
 
-.sales-cta-strip {
+.sales-cta-strip,
+.interest-strip {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -269,6 +272,32 @@ img {
   flex-wrap: wrap;
 }
 
+.footer-shell {
+  margin: 32px 0 8px;
+}
+
+.footer-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.footer-block {
+  display: grid;
+  gap: 10px;
+}
+
+.footer-links {
+  display: grid;
+  gap: 8px;
+}
+
+.footer-link {
+  font-weight: 600;
+}
+
+.collection-card,
+.proof-card,
 .faq-card,
 .ip-showcase-card,
 .publication-card-strong,
@@ -277,6 +306,7 @@ img {
   gap: 14px;
 }
 
+.premium-collection-card,
 .product-card-premium,
 .publication-card-premium {
   box-shadow: 0 18px 40px rgba(0,0,0,0.18);
@@ -559,7 +589,8 @@ th {
 
   .hero-proof-grid,
   .product-detail-layout,
-  .compact-bullets {
+  .compact-bullets,
+  .footer-grid {
     grid-template-columns: 1fr;
   }
 
@@ -603,7 +634,9 @@ th {
   .sales-intro-card,
   .trust-section-card,
   .sales-cta-strip,
-  .info-panel-soft {
+  .info-panel-soft,
+  .interest-strip,
+  .footer-shell {
     padding: 14px;
   }
 
