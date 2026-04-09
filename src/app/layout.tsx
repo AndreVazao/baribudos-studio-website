@@ -84,6 +84,8 @@ export default async function RootLayout({
               <Link href="/ips">IPs</Link>
               <Link href="/colecoes">Coleções</Link>
               <Link href="/loja">Loja</Link>
+              <Link href="/em-breve">Em breve</Link>
+              <Link href="/novidades">Novidades</Link>
               <Link href="/faq">FAQ</Link>
 
               {user ? <Link href="/conta">Conta</Link> : <Link href="/login">Entrar</Link>}
@@ -98,7 +100,7 @@ export default async function RootLayout({
             <div className="footer-grid">
               <div className="footer-block">
                 <strong>Baribudos Studio</strong>
-                <p className="muted">Montra editorial e comercial preparada para crescer por universos, coleções e produtos.</p>
+                <p className="muted">Montra editorial e comercial preparada para crescer por universos, coleções, pré-lançamentos e produtos.</p>
               </div>
 
               <div className="footer-block">
@@ -107,6 +109,8 @@ export default async function RootLayout({
                   <Link href="/loja" className="footer-link">Loja</Link>
                   <Link href="/ips" className="footer-link">IPs</Link>
                   <Link href="/colecoes" className="footer-link">Coleções</Link>
+                  <Link href="/em-breve" className="footer-link">Em breve</Link>
+                  <Link href="/novidades" className="footer-link">Novidades</Link>
                   <Link href="/faq" className="footer-link">FAQ</Link>
                 </div>
               </div>
@@ -116,7 +120,7 @@ export default async function RootLayout({
                 <div className="footer-links">
                   <a href="mailto:contacto@baribudos.pt?subject=Interesse%20em%20novidades%20Baribudos" className="footer-link">Receber novidades</a>
                   <Link href="/loja" className="footer-link">Comprar agora</Link>
-                  <Link href="/ips" className="footer-link">Descobrir universos</Link>
+                  <Link href="/em-breve" className="footer-link">Ver pré-lançamentos</Link>
                 </div>
               </div>
             </div>
