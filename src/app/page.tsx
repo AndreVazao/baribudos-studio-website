@@ -139,7 +139,7 @@ export default async function HomePage() {
       <section className="hero">
         <div className="hero-copy">
           <div className="inline-logos">
-            <BrandLogos variant="studio-primary" priority />
+            <BrandLogos variant="studio-primary" size="hero" priority />
           </div>
 
           <p className="hero-kicker">Histórias digitais, audiobooks e universos prontos para descobrir</p>
@@ -255,6 +255,21 @@ export default async function HomePage() {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section className="section sales-cta-strip">
+        <div>
+          <p className="hero-kicker">Descoberta orientada</p>
+          <h2 style={{ margin: 0 }}>Vê o que já está disponível e o que está a aquecer para o próximo lançamento.</h2>
+        </div>
+        <div className="hero-actions" style={{ marginTop: 0 }}>
+          <Link href="/novidades" className="btn">
+            Abrir novidades
+          </Link>
+          <Link href="/em-breve" className="btn secondary">
+            Ver em breve
+          </Link>
         </div>
       </section>
 
