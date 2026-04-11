@@ -5,6 +5,42 @@ import ProductCard from "@/components/product-card";
 import { prisma } from "@/lib/prisma";
 import { getLocalSagaVisualSet, normalizeSagaVisualSet } from "@/lib/saga-visual-sets";
 
+function extractMarketing(payload: any = {}) {
+  return payload?.website_marketing || payload?.marketing || payload?.commercial?.website_marketing || {};
+}
+
+function buildFeaturedTeaserCard(variant: any) {
+  const payload = variant?.payloadJson as any;
+  const marketing = extractMarketing(payload);
+  const activeProduct = variant?.products?.find((product: any) => product.active);
+  const publicState = String(marketing?.public_state || "").trim();
+
+  if (!["teaser_ready", "prelaunch_public", "launch_ready", "published"].includes(publicState) && !variant?.published) {
+    return null;
+  }
+
+  return {
+    id: variant.id,
+    slug: variant.slug,
+    title: marketing?.teaser_headline || variant.title,
+    subtitle: marketing?.teaser_subtitle || variant.shortDescription || variant.description || "",
+    badge:
+      marketing?.teaser_badge ||
+      (publicState === "prelaunch_public"
+        ? "Pré-lançamento"
+        : publicState === "published" || activeProduct
+          ? "Já disponível"
+          : "Em destaque"),
+    releaseLabel: marketing?.teaser_release_label || (activeProduct ? "Disponível agora" : "Lançamento em breve"),
+    cover:
+      marketing?.teaser_cover_url ||
+      variant?.assets?.find((asset: any) => asset.role === "COVER")?.fileUrl ||
+      null,
+    href: activeProduct ? `/loja/${activeProduct.slug}` : `/novidades/${variant.slug}`,
+    cta: marketing?.teaser_cta_label || (activeProduct ? "Comprar agora" : "Abrir teaser"),
+  };
+}
+
 async function loadHomepageVisualSet() {
   try {
     const persisted = await prisma.sagaVisualSet.findFirst({
@@ -48,6 +84,29 @@ async function loadCatalogStats() {
     return { ipCount, publicationCount, productCount };
   } catch {
     return { ipCount: 0, publicationCount: 0, productCount: 0 };
+  }
+}
+
+async function loadFeaturedTeaser() {
+  try {
+    const variants = await prisma.publicationVariant.findMany({
+      orderBy: [{ published: "desc" }, { updatedAt: "desc" }],
+      take: 12,
+      include: {
+        assets: true,
+        products: true,
+        publication: true,
+      },
+    });
+
+    for (const variant of variants) {
+      const card = buildFeaturedTeaserCard(variant);
+      if (card) return card;
+    }
+
+    return null;
+  } catch {
+    return null;
   }
 }
 
@@ -124,15 +183,19 @@ const audienceCards = [
 ];
 
 export default async function HomePage() {
-  const [visualSet, featuredProducts, stats] = await Promise.all([
+  const [visualSet, featuredProducts, stats, featuredTeaser] = await Promise.all([
     loadHomepageVisualSet(),
     loadFeaturedProducts(),
     loadCatalogStats(),
+    loadFeaturedTeaser(),
   ]);
 
-  const heroVideo = visualSet?.slots?.hero_video?.path || "/media/sagas/baribudos/baribudos-hero-intro-main-20s.mp4";
-  const heroVideoAlt = visualSet?.slots?.hero_video_alt?.path || "/media/sagas/baribudos/baribudos-hero-intro-alt-13s.mp4";
-  const mobileTeaser = visualSet?.slots?.mobile_teaser?.path || "/media/sagas/baribudos/baribudos-mobile-teaser-vertical-5s.mp4";
+  const heroVideo =
+    visualSet?.slots?.hero_video?.path || "/media/sagas/baribudos/baribudos-hero-intro-main-20s.mp4";
+  const heroVideoAlt =
+    visualSet?.slots?.hero_video_alt?.path || "/media/sagas/baribudos/baribudos-hero-intro-alt-13s.mp4";
+  const mobileTeaser =
+    visualSet?.slots?.mobile_teaser?.path || "/media/sagas/baribudos/baribudos-mobile-teaser-vertical-5s.mp4";
 
   return (
     <main className="page-shell">
@@ -258,6 +321,66 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {featuredTeaser ? (
+        <section className="section">
+          <div
+            className="sales-intro-card"
+            style={{
+              display: "grid",
+              gap: 18,
+              gridTemplateColumns: featuredTeaser.cover ? "minmax(240px, 360px) 1fr" : "1fr",
+              alignItems: "center",
+            }}
+          >
+            {featuredTeaser.cover ? (
+              <div
+                style={{
+                  borderRadius: 20,
+                  overflow: "hidden",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  background: "rgba(255,255,255,0.04)",
+                }}
+              >
+                <img
+                  src={featuredTeaser.cover}
+                  alt={featuredTeaser.title}
+                  style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                />
+              </div>
+            ) : null}
+
+            <div style={{ display: "grid", gap: 12 }}>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+                <div className="prelaunch-badge">{featuredTeaser.badge}</div>
+                <div className="stage-chip">{featuredTeaser.releaseLabel}</div>
+              </div>
+
+              <div>
+                <p className="hero-kicker" style={{ marginBottom: 8 }}>
+                  Destaque automático do momento
+                </p>
+                <h2 style={{ margin: 0 }}>{featuredTeaser.title}</h2>
+              </div>
+
+              <p className="muted" style={{ margin: 0 }}>
+                {featuredTeaser.subtitle}
+              </p>
+
+              <div className="hero-actions" style={{ marginTop: 4 }}>
+                <Link href={featuredTeaser.href} className="btn">
+                  {featuredTeaser.cta}
+                </Link>
+                <Link href="/novidades" className="btn secondary">
+                  Ver novidades
+                </Link>
+                <Link href="/em-breve" className="btn secondary">
+                  Ver em breve
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+      ) : null}
       <section className="section sales-cta-strip">
         <div>
           <p className="hero-kicker">Descoberta orientada</p>
@@ -309,17 +432,25 @@ export default async function HomePage() {
           </div>
 
           <div className="grid">
-            {featuredProducts.map((product) => (
+            {featuredProducts.map((product: any) => (
               <ProductCard
                 key={product.id}
                 slug={product.slug}
                 title={product.title}
-                description={(product.variant.payloadJson as any)?.short_description || (product.variant.payloadJson as any)?.description || null}
-                language={product.variant.language || (product.variant.payloadJson as any)?.language || product.currency}
+                description={
+                  (product.variant.payloadJson as any)?.short_description ||
+                  (product.variant.payloadJson as any)?.description ||
+                  null
+                }
+                language={
+                  product.variant.language ||
+                  (product.variant.payloadJson as any)?.language ||
+                  product.currency
+                }
                 amountCents={product.priceCents}
                 currency={product.currency}
                 kind={product.type}
-                coverUrl={product.variant.assets.find((asset) => asset.role === "COVER")?.fileUrl || null}
+                coverUrl={product.variant.assets.find((asset: any) => asset.role === "COVER")?.fileUrl || null}
                 featured={product.featured}
               />
             ))}
