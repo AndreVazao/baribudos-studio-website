@@ -90,7 +90,7 @@ async function loadCatalogStats() {
 async function loadFeaturedTeaser() {
   try {
     const variants = await prisma.publicationVariant.findMany({
-      orderBy: [{ publishedAt: "desc" }, { updatedAt: "desc" }],
+      orderBy: [{ published: "desc" }, { updatedAt: "desc" }],
       take: 12,
       include: {
         assets: true,
