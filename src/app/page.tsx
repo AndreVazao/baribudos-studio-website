@@ -188,6 +188,12 @@ const conversionSteps = [
   "O lançamento final empurra para produto, loja e próximos destinos de distribuição.",
 ];
 
+const distributionSteps = [
+  "Website próprio para descoberta, pré-lançamento e venda direta.",
+  "Expansão futura para Amazon, YouTube e outros destinos controlados pelo Studio.",
+  "Um só centro editorial, vários canais de distribuição sem partir a marca.",
+];
+
 export default async function HomePage() {
   const [visualSet, featuredProducts, stats, featuredTeaser] = await Promise.all([
     loadHomepageVisualSet(),
@@ -397,6 +403,22 @@ export default async function HomePage() {
         </div>
         <div className="bullet-grid" style={{ width: "100%" }}>
           {conversionSteps.map((step) => (
+            <div key={step} className="bullet-card">
+              {step}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="section sales-cta-strip">
+        <div>
+          <p className="hero-kicker">Expansão editorial e comercial</p>
+          <h2 style={{ margin: 0 }}>
+            O Website é o teu canal próprio hoje. A estrutura já prepara o terreno para vários destinos amanhã.
+          </h2>
+        </div>
+        <div className="bullet-grid" style={{ width: "100%" }}>
+          {distributionSteps.map((step) => (
             <div key={step} className="bullet-card">
               {step}
             </div>
