@@ -182,6 +182,12 @@ const audienceCards = [
   "Quem valoriza capa, trailer e preview antes de fechar compra",
 ];
 
+const conversionSteps = [
+  "O Studio produz, aprova e decide o estado público.",
+  "O Website recebe o teaser, aquece descoberta e prepara compra.",
+  "O lançamento final empurra para produto, loja e próximos destinos de distribuição.",
+];
+
 export default async function HomePage() {
   const [visualSet, featuredProducts, stats, featuredTeaser] = await Promise.all([
     loadHomepageVisualSet(),
@@ -381,6 +387,23 @@ export default async function HomePage() {
           </div>
         </section>
       ) : null}
+
+      <section className="section sales-cta-strip">
+        <div>
+          <p className="hero-kicker">Como isto se transforma em venda</p>
+          <h2 style={{ margin: 0 }}>
+            Do Studio para a descoberta, da descoberta para a compra, da compra para a expansão.
+          </h2>
+        </div>
+        <div className="bullet-grid" style={{ width: "100%" }}>
+          {conversionSteps.map((step) => (
+            <div key={step} className="bullet-card">
+              {step}
+            </div>
+          ))}
+        </div>
+      </section>
+
       <section className="section sales-cta-strip">
         <div>
           <p className="hero-kicker">Descoberta orientada</p>
