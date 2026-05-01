@@ -13,16 +13,18 @@ export async function GET(request: Request) {
       checked_at: new Date().toISOString(),
       role: "public_commerce_layer",
       controller: "baribudos-studio",
-      persistent_memory: {
-        stores_memory: false,
-        reason: "The website exposes public/commercial state. Operational memory belongs to Baribudos Studio and AndreOS Memory.",
+      memory_boundaries: {
+        website_stores_operational_memory: false,
+        website_role: "public catalog, products, publications, bundles and commercial state",
+        studio_local_memory: "Studio installed on the home PC keeps live operational memory and can connect to local Obsidian.",
+        development_memory_repo: "AndreVazao/andreos-memory stores programming context, repository audit notes and development decisions only.",
         studio_runtime_path: "storage/memory/AndreOS",
-        private_memory_repo: "AndreVazao/andreos-memory",
       },
       rules: {
         accepts_studio_control: true,
         stores_secrets: false,
         exposes_public_catalog: true,
+        stores_live_pc_runtime_memory: false,
       },
     });
   } catch (error) {
