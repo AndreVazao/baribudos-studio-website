@@ -17,7 +17,7 @@ Ele recebe e apresenta:
 
 ## Papel do Studio
 
-O Baribudos Studio e o cerebro operacional.
+O Baribudos Studio e o cerebro operacional privado que corre no PC de casa.
 
 O Studio controla:
 
@@ -27,18 +27,30 @@ O Studio controla:
 - Envio para o website.
 - Validacao de estado.
 - Revalidacao e reconciliacao.
-- Memoria persistente do fluxo Studio -> Website.
+- Memoria operacional local quando instalado no PC.
 
-## Memoria persistente
+## Separacao de memorias
 
-A memoria persistente vive no repo do Studio e no repo privado AndreOS Memory:
+A separacao correta e esta:
 
 ```text
-AndreVazao/baribudos-studio
+Website publico
+└── catalogo, produtos, publicacoes, bundles e estado publico/comercial
+
+Studio no PC
+└── memoria operacional viva, progresso de trabalho e Obsidian local
+
 AndreVazao/andreos-memory
+└── memoria tecnica de programacao/contexto das repos, auditorias e decisoes de desenvolvimento
 ```
 
-O website nao deve guardar memoria operacional sensivel. Deve expor estado e aceitar publicacoes validadas pelo Studio.
+## GitHub publico durante a fase de build
+
+Durante a fase inicial, algumas repos podem permanecer publicas para permitir builds gratuitos e reduzir limites de cota em builders privados.
+
+Isto nao significa que o conteudo operacional privado deva ir para GitHub publico.
+
+Quando o pipeline/builder estiver concluido e os programas estiverem prontos, a estrategia final e passar o que for privado para repos privadas.
 
 ## Regra de seguranca
 
@@ -50,9 +62,13 @@ Nunca guardar no repo publico:
 - cookies
 - chaves privadas
 - credenciais
+- dados sensiveis de clientes
+- memoria operacional viva do PC
+- ficheiros runtime privados do Studio
 
 ## Fonte de verdade
 
-- Conteudo operacional e decisoes: Baribudos Studio + AndreOS Memory.
+- Conteudo operacional vivo: Studio instalado no PC + Obsidian local.
 - Estado publico e catalogo: Baribudos Studio Website.
+- Contexto de programacao das repos: AndreVazao/andreos-memory.
 - Segredos: variaveis de ambiente / gestor seguro de credenciais.
