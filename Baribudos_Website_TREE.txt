@@ -245,6 +245,7 @@ baribudos-studio-website/
 ├─ .env.example
 ├─ .env.production.template
 ├─ .gitignore
+├─ Baribudos_Website_TREE.txt
 ├─ next.config.mjs
 ├─ OFFICIAL_STUDIO_WEBSITE_CONTRACT.txt
 ├─ package.json
