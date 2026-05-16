@@ -1,0 +1,254 @@
+baribudos-studio-website/
+├─ .github/
+│  └─ workflows/
+│     ├─ visibility-only.yml
+│     └─ website-ci.yml
+├─ docs/
+│  ├─ ADMIN_CONTROL_NOTE.md
+│  ├─ FIRST_REVENUE_CHECKLIST.md
+│  ├─ FIRST_SALES_PATH.md
+│  ├─ MONETIZATION_ROLE.md
+│  ├─ RELEASE_FLOW.md
+│  ├─ RUNBOOK.md
+│  ├─ STUDIO_MEMORY_LINK.md
+│  ├─ V5_WEBSITE_SCOPE.md
+│  ├─ V6_WEBSITE_ROLE.md
+│  ├─ V7_WEBSITE_NEXT.md
+│  ├─ VALIDATION_CHECKLIST.md
+│  ├─ VISUAL_SETS_VALIDATION_CHECKLIST.txt
+│  ├─ WEBSITE_IN_V4.md
+│  └─ WEBSITE_VS_EXTERNAL_CHANNELS.md
+├─ prisma/
+│  ├─ migrations/
+│  │  └─ 20260330_add_saga_visual_sets/
+│  │     └─ migration.sql
+│  └─ schema.prisma
+├─ public/
+│  ├─ brand/
+│  │  ├─ .gitkeep
+│  │  ├─ baribudos-studio-logo.png
+│  │  ├─ historia-que-protege-selo.png
+│  │  └─ os-baribudos-logo.png
+│  └─ media/
+│     └─ sagas/
+│        └─ baribudos/
+│           ├─ BARIBUDOS_VISUAL_SET.txt
+│           ├─ baribudos-hero-intro-alt-13s.mp4
+│           ├─ baribudos-hero-intro-main-20s.mp4
+│           └─ baribudos-mobile-teaser-vertical-5s.mp4
+├─ scripts/
+│  └─ check-secret-hygiene.mjs
+├─ src/
+│  ├─ app/
+│  │  ├─ admin/
+│  │  │  ├─ account/
+│  │  │  │  └─ page.tsx
+│  │  │  ├─ customers/
+│  │  │  │  └─ page.tsx
+│  │  │  ├─ import/
+│  │  │  │  └─ page.tsx
+│  │  │  ├─ orders/
+│  │  │  │  └─ page.tsx
+│  │  │  ├─ products/
+│  │  │  │  └─ page.tsx
+│  │  │  ├─ publications/
+│  │  │  │  └─ page.tsx
+│  │  │  └─ page.tsx
+│  │  ├─ api/
+│  │  │  ├─ account/
+│  │  │  │  └─ change-password/
+│  │  │  │     └─ route.ts
+│  │  │  ├─ admin/
+│  │  │  │  ├─ bootstrap/
+│  │  │  │  │  └─ route.ts
+│  │  │  │  ├─ import-package/
+│  │  │  │  │  └─ route.ts
+│  │  │  │  ├─ orders/
+│  │  │  │  │  └─ route.ts
+│  │  │  │  ├─ products/
+│  │  │  │  │  └─ route.ts
+│  │  │  │  ├─ publications/
+│  │  │  │  │  └─ route.ts
+│  │  │  │  └─ users/
+│  │  │  │     ├─ [id]/
+│  │  │  │     │  └─ route.ts
+│  │  │  │     └─ route.ts
+│  │  │  ├─ auth/
+│  │  │  │  ├─ login/
+│  │  │  │  │  └─ route.ts
+│  │  │  │  ├─ logout/
+│  │  │  │  │  └─ route.ts
+│  │  │  │  ├─ me/
+│  │  │  │  │  └─ route.ts
+│  │  │  │  └─ register/
+│  │  │  │     └─ route.ts
+│  │  │  ├─ catalog/
+│  │  │  │  ├─ bundles/
+│  │  │  │  │  ├─ [slug]/
+│  │  │  │  │  │  └─ route.ts
+│  │  │  │  │  └─ route.ts
+│  │  │  │  └─ home/
+│  │  │  │     └─ route.ts
+│  │  │  ├─ checkout/
+│  │  │  │  ├─ paypal/
+│  │  │  │  │  ├─ capture-order/
+│  │  │  │  │  │  └─ route.ts
+│  │  │  │  │  └─ create-order/
+│  │  │  │  │     └─ route.ts
+│  │  │  │  └─ stripe/
+│  │  │  │     └─ route.ts
+│  │  │  ├─ library/
+│  │  │  │  └─ access/
+│  │  │  │     └─ route.ts
+│  │  │  ├─ publications/
+│  │  │  │  ├─ ingest/
+│  │  │  │  │  └─ route.ts
+│  │  │  │  └─ variant/
+│  │  │  │     └─ [variantId]/
+│  │  │  │        └─ route.ts
+│  │  │  ├─ studio/
+│  │  │  │  ├─ admin/
+│  │  │  │  │  ├─ bundles/
+│  │  │  │  │  │  └─ upsert/
+│  │  │  │  │  │     └─ route.ts
+│  │  │  │  │  ├─ products/
+│  │  │  │  │  │  └─ [productId]/
+│  │  │  │  │  │     ├─ pricing/
+│  │  │  │  │  │     │  └─ route.ts
+│  │  │  │  │  │     └─ visibility/
+│  │  │  │  │  │        └─ route.ts
+│  │  │  │  │  └─ visual-sets/
+│  │  │  │  │     └─ upsert/
+│  │  │  │  │        └─ route.ts
+│  │  │  │  ├─ catalog-status/
+│  │  │  │  │  └─ route.ts
+│  │  │  │  ├─ project-status/
+│  │  │  │  │  └─ [projectId]/
+│  │  │  │  │     └─ route.ts
+│  │  │  │  ├─ publications/
+│  │  │  │  │  ├─ [publicationId]/
+│  │  │  │  │  │  ├─ revalidate/
+│  │  │  │  │  │  │  └─ route.ts
+│  │  │  │  │  │  ├─ status/
+│  │  │  │  │  │  │  └─ route.ts
+│  │  │  │  │  │  └─ unpublish/
+│  │  │  │  │  │     └─ route.ts
+│  │  │  │  │  └─ route.ts
+│  │  │  │  ├─ publish/
+│  │  │  │  │  └─ route.ts
+│  │  │  │  ├─ reconcile/
+│  │  │  │  │  └─ route.ts
+│  │  │  │  ├─ selling-status/
+│  │  │  │  │  └─ route.ts
+│  │  │  │  ├─ status/
+│  │  │  │  │  ├─ bundles/
+│  │  │  │  │  │  └─ route.ts
+│  │  │  │  │  ├─ catalog/
+│  │  │  │  │  │  └─ route.ts
+│  │  │  │  │  ├─ health/
+│  │  │  │  │  │  └─ route.ts
+│  │  │  │  │  ├─ memory-link/
+│  │  │  │  │  │  └─ route.ts
+│  │  │  │  │  ├─ publication/
+│  │  │  │  │  │  └─ [publicationId]/
+│  │  │  │  │  │     └─ route.ts
+│  │  │  │  │  ├─ summary/
+│  │  │  │  │  │  └─ route.ts
+│  │  │  │  │  └─ visual-sets/
+│  │  │  │  │     └─ route.ts
+│  │  │  │  └─ summary/
+│  │  │  │     └─ route.ts
+│  │  │  ├─ visual-sets/
+│  │  │  │  ├─ [sagaSlug]/
+│  │  │  │  │  └─ route.ts
+│  │  │  │  └─ route.ts
+│  │  │  └─ webhook/
+│  │  │     └─ stripe/
+│  │  │        └─ route.ts
+│  │  ├─ audiobooks/
+│  │  │  └─ page.tsx
+│  │  ├─ biblioteca/
+│  │  │  └─ page.tsx
+│  │  ├─ colecoes/
+│  │  │  └─ page.tsx
+│  │  ├─ comprar/
+│  │  │  └─ page.tsx
+│  │  ├─ conta/
+│  │  │  └─ page.tsx
+│  │  ├─ ebooks/
+│  │  │  └─ page.tsx
+│  │  ├─ em-breve/
+│  │  │  └─ page.tsx
+│  │  ├─ faq/
+│  │  │  └─ page.tsx
+│  │  ├─ ip/
+│  │  │  └─ [slug]/
+│  │  │     └─ page.tsx
+│  │  ├─ ips/
+│  │  │  └─ page.tsx
+│  │  ├─ lancamentos/
+│  │  │  └─ page.tsx
+│  │  ├─ login/
+│  │  │  └─ page.tsx
+│  │  ├─ loja/
+│  │  │  ├─ [slug]/
+│  │  │  │  └─ page.tsx
+│  │  │  └─ page.tsx
+│  │  ├─ novidades/
+│  │  │  ├─ [slug]/
+│  │  │  │  └─ page.tsx
+│  │  │  └─ page.tsx
+│  │  ├─ paypal/
+│  │  │  └─ return/
+│  │  │     └─ page.tsx
+│  │  ├─ primeira-compra/
+│  │  │  └─ page.tsx
+│  │  ├─ registar/
+│  │  │  └─ page.tsx
+│  │  ├─ studio/
+│  │  │  └─ page.tsx
+│  │  ├─ sucesso/
+│  │  │  └─ page.tsx
+│  │  ├─ globals.css
+│  │  ├─ layout.tsx
+│  │  └─ page.tsx
+│  ├─ components/
+│  │  ├─ brand/
+│  │  │  ├─ BrandLogos.tsx
+│  │  │  └─ SagaHeroMedia.tsx
+│  │  ├─ admin-nav.tsx
+│  │  ├─ checkout-box.tsx
+│  │  ├─ paypal-button.tsx
+│  │  ├─ product-card.tsx
+│  │  └─ publication-card.tsx
+│  ├─ lib/
+│  │  ├─ auth-guards.ts
+│  │  ├─ auth-session.ts
+│  │  ├─ auth.ts
+│  │  ├─ library.ts
+│  │  ├─ password.ts
+│  │  ├─ paypal.ts
+│  │  ├─ pricing.ts
+│  │  ├─ prisma.ts
+│  │  ├─ publication-mapper.ts
+│  │  ├─ publication-query.ts
+│  │  ├─ publication-schema.ts
+│  │  ├─ saga-visual-sets.ts
+│  │  ├─ slug.ts
+│  │  ├─ stripe.ts
+│  │  ├─ studio-control-plane.ts
+│  │  ├─ studio-publication-control.ts
+│  │  └─ sync-commerce.ts
+│  ├─ styles/
+│  │  └─ brand.css
+│  └─ middleware.ts
+├─ .env.example
+├─ .env.production.template
+├─ .gitignore
+├─ next.config.mjs
+├─ OFFICIAL_STUDIO_WEBSITE_CONTRACT.txt
+├─ package.json
+├─ PROJECT_TREE.txt
+├─ README.md
+├─ REPOSITORY_TREE_REFERENCE.txt
+└─ tsconfig.json
