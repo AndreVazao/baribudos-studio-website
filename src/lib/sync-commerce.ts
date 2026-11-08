@@ -8,7 +8,7 @@ export async function syncPublicationToCommerce(input: PublicationIngestInput) {
   const priceCents = Math.round(payload.price * 100);
   const productType = inferProductType(payload.formats) as any;
   const seriesSlug = payload.series_name
-    ? `${payload.ip_slug}-${payload.series_name.toLowerCase().replace(/\\s+/g, "-")}`
+    ? `${payload.ip_slug}-${payload.series_name.toLowerCase().replace(/\s+/g, "-")}`
     : null;
 
   const assetUrls = [
