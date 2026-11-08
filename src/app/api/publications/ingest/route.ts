@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { assertStudioApiKey } from "@/lib/auth";
+import { assertStudioApiKey, asHttpErrorStatus } from "@/lib/auth";
 import { publicationIngestSchema } from "@/lib/publication-schema";
 import { syncPublicationToCommerce } from "@/lib/sync-commerce";
 
@@ -22,12 +22,13 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
+    const status = asHttpErrorStatus(error, 400);
     return NextResponse.json(
       {
         ok: false,
-        error: error instanceof Error ? error.message : "Erro interno.",
+        error: status >= 500 ? "internal_error" : (error instanceof Error ? error.message : "request_failed"),
       },
-      { status: 400 }
+      { status }
     );
   }
-          }
+}
