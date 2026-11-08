@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { ZodError } from "zod";
 import { assertStudioApiKey, asHttpErrorStatus } from "@/lib/auth";
 import { publicationIngestSchema } from "@/lib/publication-schema";
 import { syncPublicationToCommerce } from "@/lib/sync-commerce";
@@ -22,7 +23,9 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
-    const status = asHttpErrorStatus(error, 400);
+    const status = error instanceof ZodError || error instanceof SyntaxError
+      ? 400
+      : asHttpErrorStatus(error, 500);
     return NextResponse.json(
       {
         ok: false,
