@@ -12,8 +12,10 @@ export const websitePayloadSchema = z.object({
   description: z.string(),
   short_description: z.string().optional().default(""),
   formats: z.array(z.string()).default([]),
-  price: z.number(),
-  currency: z.string().default("EUR"),
+  // Product.priceCents is a PostgreSQL Int; reject values that cannot be
+  // represented safely in minor units before the transaction starts.
+  price: z.number().finite().min(0).max(21474836.47),
+  currency: z.string().trim().toUpperCase().regex(/^[A-Z]{3}$/).default("EUR"),
   channel: z.string(),
   assets: z.object({
     cover: z.string().url().optional(),
