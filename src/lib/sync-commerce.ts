@@ -151,25 +151,54 @@ export async function syncPublicationToCommerce(input: PublicationIngestInput) {
       });
     }
 
-    const product = await tx.product.upsert({
-      where: { slug: variant.slug },
-      update: {
-        title: payload.title,
-        type: productType,
-        priceCents,
-        currency: payload.currency,
-        active: true,
-      },
-      create: {
-        publicationVariantId: variant.variantId,
-        slug: variant.slug,
-        title: payload.title,
-        type: productType,
-        priceCents,
-        currency: payload.currency,
-        active: true,
-      },
+    const existingProducts = await tx.product.findMany({
+      where: { publicationVariantId: variant.variantId },
+      orderBy: { createdAt: "asc" },
     });
+    const productBySlug = await tx.product.findUnique({
+      where: { slug: variant.slug },
+    });
+
+    if (productBySlug && productBySlug.publicationVariantId !== variant.variantId) {
+      throw new Error("O slug comercial já pertence a outra variante.");
+    }
+
+    // Keep one stable commerce product per variant when editorial changes alter
+    // the generated slug. Older duplicates are retained for historical library
+    // references but are made inactive so they cannot continue being sold.
+    const primaryProduct =
+      existingProducts.find((item) => item.slug === variant.slug) ??
+      existingProducts[0] ??
+      productBySlug;
+    const productData = {
+      publicationVariantId: variant.variantId,
+      slug: variant.slug,
+      title: payload.title,
+      type: productType,
+      priceCents,
+      currency: payload.currency,
+      active: true,
+    };
+
+    const product = primaryProduct
+      ? await tx.product.update({
+          where: { id: primaryProduct.id },
+          data: productData,
+        })
+      : await tx.product.create({
+          data: productData,
+        });
+
+    const duplicateProductIds = existingProducts
+      .filter((item) => item.id !== product.id)
+      .map((item) => item.id);
+
+    if (duplicateProductIds.length > 0) {
+      await tx.product.updateMany({
+        where: { id: { in: duplicateProductIds } },
+        data: { active: false },
+      });
+    }
 
     return {
       ip,
