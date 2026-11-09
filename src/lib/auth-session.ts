@@ -52,9 +52,11 @@ export async function getCurrentUser() {
   const session = await getCurrentSession();
   if (!session?.sub) return null;
 
-  return prisma.user.findUnique({
+  const user = await prisma.user.findUnique({
     where: { id: session.sub },
   });
+
+  return user?.isActive ? user : null;
 }
 
 export async function requireUser() {
