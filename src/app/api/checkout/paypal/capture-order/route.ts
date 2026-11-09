@@ -54,9 +54,11 @@ export async function POST(request: Request) {
     );
     const capturedAmount = completedCapture?.amount;
     const expectedAmount = (checkout.amountCents / 100).toFixed(2);
-    const amountMatches =
-      capturedAmount?.value === expectedAmount &&
-      String(capturedAmount.currency_code || "").toUpperCase() === checkout.currency.toUpperCase();
+    const amountMatches = Boolean(
+      capturedAmount &&
+      capturedAmount.value === expectedAmount &&
+      String(capturedAmount.currency_code || "").toUpperCase() === checkout.currency.toUpperCase()
+    );
 
     if (
       capture.id !== orderId ||
