@@ -1,4 +1,6 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { assertPublicationVersionCanReplace } from "@/lib/publication-version";
 import type { PublicationIngestInput } from "@/lib/publication-schema";
 import { inferProductType, makeVariantSlug } from "@/lib/publication-mapper";
 import { toPriceCents } from "@/lib/publication-price";
@@ -28,6 +30,26 @@ export async function syncPublicationToCommerce(input: PublicationIngestInput) {
   // All catalog records and their assets are committed together. Replaying an
   // envelope replaces the variant's asset snapshot instead of appending duplicates.
   return prisma.$transaction(async (tx) => {
+    const existingVariant = await tx.publicationVariant.findUnique({
+      where: { variantId: input.variant_id },
+      select: { payloadJson: true },
+    });
+    const storedPayload = existingVariant?.payloadJson;
+    const storedStudioMeta =
+      storedPayload !== null &&
+      typeof storedPayload === "object" &&
+      !Array.isArray(storedPayload)
+        ? (storedPayload as Record<string, unknown>)._studio as
+            | { project_version?: unknown; checksum?: unknown }
+            | undefined
+        : undefined;
+
+    // Reject delayed/out-of-order deliveries before touching any catalog row.
+    assertPublicationVersionCanReplace(storedStudioMeta, {
+      project_version: input.project_version,
+      checksum: input.checksum,
+    });
+
     const ip = await tx.intellectualProperty.upsert({
       where: { slug: payload.ip_slug },
       update: { name: payload.ip_name },
@@ -208,5 +230,9 @@ export async function syncPublicationToCommerce(input: PublicationIngestInput) {
       variant,
       product,
     };
+  }, {
+    // Concurrent deliveries must not both pass the version check and commit
+    // out of order. PostgreSQL aborts one serializable transaction on conflict.
+    isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
   });
 }
