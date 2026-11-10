@@ -45,7 +45,7 @@ function stableJson(value: unknown): string {
     return `{${entries.join(",")}}`;
   }
 
-  return JSON.stringify(value);
+  return JSON.stringify(value) ?? "undefined";
 }
 
 export function assertPublicationVersionCanReplace(
