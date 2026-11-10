@@ -8,7 +8,8 @@
     "start": "next start",
     "postinstall": "prisma generate",
     "typecheck": "tsc --noEmit",
-    "ci:build": "prisma generate && next build"
+    "ci:build": "prisma generate && next build",
+    "test": "node --test tests/*.test.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.6.0",
