@@ -1,11 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import type { PublicationIngestInput } from "@/lib/publication-schema";
 import { inferProductType, makeVariantSlug } from "@/lib/publication-mapper";
+import { toPriceCents } from "@/lib/publication-price";
 
 export async function syncPublicationToCommerce(input: PublicationIngestInput) {
   const payload = input.payload;
   const variantSlug = makeVariantSlug(input);
-  const priceCents = Math.round(payload.price * 100);
+  const priceCents = toPriceCents(payload.price);
   const productType = inferProductType(payload.formats) as any;
   const seriesSlug = payload.series_name
     ? `${payload.ip_slug}-${payload.series_name.toLowerCase().replace(/\s+/g, "-")}`
