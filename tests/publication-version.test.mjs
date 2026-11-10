@@ -15,12 +15,13 @@ const { assertPublicationVersionCanReplace, PublicationVersionConflictError } = 
 
 const checksumA = "a".repeat(64);
 const checksumB = "b".repeat(64);
+const frozenPayload = { title: "Livro A", price: 9.9, nested: { b: 2, a: 1 } };
 
 test("accepts the first version when no Website snapshot exists", () => {
   assert.doesNotThrow(() => assertPublicationVersionCanReplace(null, {
     project_version: "2026-11-10T10:00:00.000000+00:00",
     checksum: checksumA,
-  }));
+  }, undefined, frozenPayload));
 });
 
 test("accepts a strictly newer Studio snapshot", () => {
@@ -30,7 +31,7 @@ test("accepts a strictly newer Studio snapshot", () => {
   }, {
     project_version: "2026-11-10T10:00:00.000001+00:00",
     checksum: checksumB,
-  }));
+  }, frozenPayload, { ...frozenPayload, title: "Livro B" }));
 });
 
 test("rejects an older snapshot instead of overwriting newer Website state", () => {
@@ -40,20 +41,32 @@ test("rejects an older snapshot instead of overwriting newer Website state", () 
   }, {
     project_version: "2026-11-10T10:00:00.000000+00:00",
     checksum: checksumA,
-  }), (error) => error instanceof PublicationVersionConflictError && error.code === "stale_publication_version");
+  }, frozenPayload, frozenPayload), (error) => error instanceof PublicationVersionConflictError && error.code === "stale_publication_version");
 });
 
-test("allows an exact replay but rejects a different payload at the same version", () => {
+test("allows the same frozen payload to be republished with a new delivery checksum", () => {
   const current = {
     project_version: "2026-11-10T10:00:00.000000+00:00",
     checksum: checksumA,
   };
 
-  assert.doesNotThrow(() => assertPublicationVersionCanReplace(current, current));
-  assert.throws(() => assertPublicationVersionCanReplace(current, {
-    ...current,
+  assert.doesNotThrow(() => assertPublicationVersionCanReplace(
+    current,
+    { ...current, checksum: checksumB },
+    frozenPayload,
+    { nested: { a: 1, b: 2 }, price: 9.9, title: "Livro A" },
+  ));
+});
+
+test("rejects changed editorial content at the same frozen version", () => {
+  assert.throws(() => assertPublicationVersionCanReplace({
+    project_version: "2026-11-10T10:00:00.000000+00:00",
+    checksum: checksumA,
+  }, {
+    project_version: "2026-11-10T10:00:00.000000+00:00",
     checksum: checksumB,
-  }), (error) => error instanceof PublicationVersionConflictError && error.code === "publication_version_checksum_conflict");
+  }, frozenPayload, { ...frozenPayload, title: "Conteúdo alterado" }),
+  (error) => error instanceof PublicationVersionConflictError && error.code === "publication_version_payload_conflict");
 });
 
 test("compares timezone offsets as the same instant", () => {
@@ -63,7 +76,8 @@ test("compares timezone offsets as the same instant", () => {
   }, {
     project_version: "2026-11-10T10:00:00.000000+00:00",
     checksum: checksumB,
-  }), (error) => error instanceof PublicationVersionConflictError && error.code === "publication_version_checksum_conflict");
+  }, frozenPayload, { ...frozenPayload, title: "Different" }),
+  (error) => error instanceof PublicationVersionConflictError && error.code === "publication_version_payload_conflict");
 });
 
 test("rejects malformed timestamps and non-SHA256 checksums", () => {
