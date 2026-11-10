@@ -1,5 +1,12 @@
 import { z } from "zod";
 
+function hasAtMostTwoDecimalPlaces(value: number): boolean {
+  const minorUnits = value * 100;
+  const roundedMinorUnits = Math.round(minorUnits);
+  const floatingPointTolerance = Number.EPSILON * Math.max(1, Math.abs(minorUnits)) * 8;
+  return Math.abs(minorUnits - roundedMinorUnits) <= floatingPointTolerance;
+}
+
 export const websitePayloadSchema = z.object({
   project_id: z.string(),
   project_slug: z.string(),
@@ -14,7 +21,9 @@ export const websitePayloadSchema = z.object({
   formats: z.array(z.string()).default([]),
   // Product.priceCents is a PostgreSQL Int; reject values that cannot be
   // represented safely in minor units before the transaction starts.
-  price: z.number().finite().min(0).max(21474836.47),
+  price: z.number().finite().min(0).max(21474836.47).refine(hasAtMostTwoDecimalPlaces, {
+    message: "price_must_have_at_most_two_decimal_places",
+  }),
   currency: z.string().trim().toUpperCase().regex(/^[A-Z]{3}$/).default("EUR"),
   channel: z.string(),
   assets: z.object({
