@@ -35,20 +35,31 @@ export async function syncPublicationToCommerce(input: PublicationIngestInput) {
       select: { payloadJson: true },
     });
     const storedPayload = existingVariant?.payloadJson;
-    const storedStudioMeta =
+    const storedPayloadRecord =
       storedPayload !== null &&
       typeof storedPayload === "object" &&
       !Array.isArray(storedPayload)
-        ? (storedPayload as Record<string, unknown>)._studio as
-            | { project_version?: unknown; checksum?: unknown }
-            | undefined
+        ? storedPayload as Record<string, unknown>
         : undefined;
+    const storedStudioMeta = storedPayloadRecord?._studio as
+      | { project_version?: unknown; checksum?: unknown }
+      | undefined;
+    const storedEditorialPayload = storedPayloadRecord
+      ? Object.fromEntries(Object.entries(storedPayloadRecord).filter(([key]) => key !== "_studio"))
+      : undefined;
 
     // Reject delayed/out-of-order deliveries before touching any catalog row.
-    assertPublicationVersionCanReplace(storedStudioMeta, {
-      project_version: input.project_version,
-      checksum: input.checksum,
-    });
+    // Compare editorial payload for equal freeze versions because published_at
+    // changes per delivery and therefore changes the envelope checksum.
+    assertPublicationVersionCanReplace(
+      storedStudioMeta,
+      {
+        project_version: input.project_version,
+        checksum: input.checksum,
+      },
+      storedEditorialPayload,
+      payload,
+    );
 
     const ip = await tx.intellectualProperty.upsert({
       where: { slug: payload.ip_slug },
