@@ -44,9 +44,22 @@ export function assertAdminKey(request: Request) {
   }
 }
 
+export function isRetryablePrismaTransactionConflict(error: unknown) {
+  return Boolean(
+    error &&
+    typeof error === "object" &&
+    "code" in error &&
+    error.code === "P2034"
+  )
+}
+
 export function asHttpErrorStatus(error: unknown, fallback = 400) {
+  if (isRetryablePrismaTransactionConflict(error)) {
+    return 409
+  }
+
   if (error && typeof error === "object" && "status" in error) {
-    const status = Number((error).status)
+    const status = Number(error.status)
     if (Number.isFinite(status) && status >= 400) {
       return status
     }
