@@ -32,9 +32,27 @@ function normalizeChecksum(value: unknown): string {
   return typeof value === "string" ? value.trim().toLowerCase() : "";
 }
 
+function stableJson(value: unknown): string {
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => stableJson(item)).join(",")}]`;
+  }
+
+  if (value !== null && typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    const entries = Object.keys(record)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${stableJson(record[key])}`);
+    return `{${entries.join(",")}}`;
+  }
+
+  return JSON.stringify(value);
+}
+
 export function assertPublicationVersionCanReplace(
   current: StudioPublicationVersion | null | undefined,
   incoming: StudioPublicationVersion,
+  currentPayload?: unknown,
+  incomingPayload?: unknown,
 ): void {
   const incomingVersion = parseIsoInstantNanoseconds(incoming.project_version);
   const incomingChecksum = normalizeChecksum(incoming.checksum);
@@ -61,9 +79,12 @@ export function assertPublicationVersionCanReplace(
   }
 
   if (incomingVersion === currentVersion) {
-    const currentChecksum = normalizeChecksum(current?.checksum);
-    if (!currentChecksum || currentChecksum !== incomingChecksum) {
-      throw new PublicationVersionConflictError("publication_version_checksum_conflict");
+    // published_at is generated for each delivery and is included in the
+    // envelope checksum. Compare the frozen editorial payload, not that
+    // delivery timestamp, so a legitimate republish/retry remains idempotent.
+    if (currentPayload === undefined || incomingPayload === undefined ||
+        stableJson(currentPayload) !== stableJson(incomingPayload)) {
+      throw new PublicationVersionConflictError("publication_version_payload_conflict");
     }
   }
 }
