@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { hasAtMostTwoDecimalPlaces } from "@/lib/publication-price";
 
 function hasAtMostTwoDecimalPlaces(value: number): boolean {
   const minorUnits = value * 100;
