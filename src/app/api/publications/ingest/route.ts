@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
-import { assertStudioApiKey, asHttpErrorStatus } from "@/lib/auth";
+import {
+  assertStudioApiKey,
+  asHttpErrorStatus,
+  isRetryablePrismaTransactionConflict,
+} from "@/lib/auth";
 import { publicationIngestSchema } from "@/lib/publication-schema";
 import { syncPublicationToCommerce } from "@/lib/sync-commerce";
 
@@ -23,15 +27,27 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
+    const retryableConflict = isRetryablePrismaTransactionConflict(error);
     const status = error instanceof ZodError || error instanceof SyntaxError
       ? 400
       : asHttpErrorStatus(error, 500);
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
         ok: false,
-        error: status >= 500 ? "internal_error" : (error instanceof Error ? error.message : "request_failed"),
+        error: retryableConflict
+          ? "retryable_transaction_conflict"
+          : status >= 500
+            ? "internal_error"
+            : (error instanceof Error ? error.message : "request_failed"),
+        ...(retryableConflict ? { retryable: true } : {}),
       },
       { status }
     );
+
+    if (retryableConflict) {
+      response.headers.set("Retry-After", "1");
+    }
+
+    return response;
   }
 }
