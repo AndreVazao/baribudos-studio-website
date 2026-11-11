@@ -1,3 +1,16 @@
+import { timingSafeEqual } from "node:crypto";
+
+function constantTimeSecretEqual(expected: string, received: string): boolean {
+  const expectedBytes = Buffer.from(expected, "utf8");
+  const receivedBytes = Buffer.from(received, "utf8");
+
+  if (expectedBytes.length !== receivedBytes.length) {
+    return false;
+  }
+
+  return timingSafeEqual(expectedBytes, receivedBytes);
+}
+
 class UnauthorizedStudioRequestError extends Error {
   status = 401
   constructor(message = "Unauthorized studio request.") {
@@ -30,7 +43,7 @@ export function assertStudioApiKey(request: Request) {
   const expected = readSecret(["STUDIO_PUBLISH_API_KEY", "STUDIO_API_KEY"])
   const received = readHeader(request, "x-studio-api-key")
 
-  if (!expected || !received || received !== expected) {
+  if (!expected || !received || !constantTimeSecretEqual(expected, received)) {
     throw new UnauthorizedStudioRequestError()
   }
 }
@@ -39,7 +52,7 @@ export function assertAdminKey(request: Request) {
   const expected = readSecret(["ADMIN_PANEL_KEY", "STUDIO_ADMIN_PANEL_KEY"])
   const received = readHeader(request, "x-admin-key")
 
-  if (!expected || !received || received !== expected) {
+  if (!expected || !received || !constantTimeSecretEqual(expected, received)) {
     throw new UnauthorizedAdminRequestError()
   }
 }
