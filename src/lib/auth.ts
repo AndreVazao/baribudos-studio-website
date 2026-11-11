@@ -52,7 +52,7 @@ export function assertAdminKey(request: Request) {
   const expected = readSecret(["ADMIN_PANEL_KEY", "STUDIO_ADMIN_PANEL_KEY"])
   const received = readHeader(request, "x-admin-key")
 
-  if (!expected || !received || received !== expected) {
+  if (!expected || !received || !constantTimeSecretEqual(expected, received)) {
     throw new UnauthorizedAdminRequestError()
   }
 }
