@@ -77,3 +77,20 @@ test("missing configured secrets fail closed", () => {
     restoreEnvironment("STUDIO_PUBLISH_API_KEY", previous);
   }
 });
+
+test("missing admin secrets fail closed", () => {
+  const previous = process.env.ADMIN_PANEL_KEY;
+  const fallback = process.env.STUDIO_ADMIN_PANEL_KEY;
+  delete process.env.ADMIN_PANEL_KEY;
+  delete process.env.STUDIO_ADMIN_PANEL_KEY;
+
+  try {
+    assert.throws(
+      () => assertAdminKey(requestWithHeader("x-admin-key", "any-value")),
+      (error) => error.status === 401
+    );
+  } finally {
+    restoreEnvironment("ADMIN_PANEL_KEY", previous);
+    restoreEnvironment("STUDIO_ADMIN_PANEL_KEY", fallback);
+  }
+});
