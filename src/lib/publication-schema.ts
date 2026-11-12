@@ -21,7 +21,9 @@ export const websitePayloadSchema = z.object({
   currency: z.string().trim().toUpperCase().regex(/^[A-Z]{3}$/).default("EUR"),
   channel: z.string(),
   assets: z.object({
-    cover: z.string().url().optional(),
+    // Studio currently sends an empty string when no cover is selected.
+    // Normalize that sentinel to an absent asset while still rejecting relative/local paths.
+    cover: z.preprocess((value) => value === "" ? undefined : value, z.string().url().optional()),
     logos: z.array(z.string().url()).optional().default([]),
     gallery: z.array(z.string().url()).optional().default([]),
     sample_pages: z.array(z.string().url()).optional().default([]),
