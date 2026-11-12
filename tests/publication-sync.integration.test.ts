@@ -207,6 +207,10 @@ test("concurrent PostgreSQL deliveries never leave an older frozen version on to
   ]);
   assert.ok(outcomes.some((outcome) => outcome.status === "fulfilled"));
 
+  // Match the Studio sender behavior: a retryable serialization conflict is
+  // retried with the exact same frozen envelope after the concurrent race.
+  await syncPublicationToCommerce(newer as never);
+
   const stored = await prisma.publicationVariant.findUnique({
     where: { variantId: older.variant_id },
   });
