@@ -170,13 +170,14 @@ function serializePythonJson(value: JsonValue): string {
 export function verifyPublicationChecksum(rawBody: string): boolean {
   try {
     const parsed = parsePythonJson(rawBody);
-    if (parsed === null || Array.isArray(parsed) || typeof parsed !== "object") return false;
+    if (parsed === null || Array.isArray(parsed) || typeof parsed !== "object" || NUMBER_TOKEN in parsed) return false;
+    const envelope = parsed as { [key: string]: JsonValue };
 
-    const checksum = parsed.checksum;
+    const checksum = envelope.checksum;
     if (typeof checksum !== "string" || !/^[a-fA-F0-9]{64}$/.test(checksum)) return false;
 
     const envelopeWithoutChecksum: { [key: string]: JsonValue } = Object.create(null);
-    for (const [key, value] of Object.entries(parsed)) {
+    for (const [key, value] of Object.entries(envelope)) {
       if (key !== "checksum") envelopeWithoutChecksum[key] = value;
     }
 
