@@ -82,6 +82,25 @@ Idempotency key: `publication_id + variant_id + channel + target_account + appro
 
 Render + Vercel is the confirmed hosting architecture, but the exact responsibility of each deployed service must be read from repository configuration and the connected provider accounts rather than inferred from the provider names.
 
+### 5.1 Verified infrastructure snapshot — 2026-11-12
+
+**Vercel — verified from the connected project account**
+- The project named baribudos-studio-website is linked to AndreVazao/baribudos-studio-website and uses the Next.js framework.
+- The connected team is on the Hobby plan.
+- The latest production deployment is READY and points to main commit 2d10a14b39daa996341fbd3183ddaa7a03edf415 (the external-distribution roadmap documentation change).
+- Project metadata currently lists Vercel-managed .vercel.app domains; no custom domain was returned.
+- The environment-variable inventory returned 14 visible variable names and zero hidden production variables. None of the names indicates Vercel Blob, S3, R2, Cloudinary or another dedicated asset store. Values were not decrypted or inspected.
+- The Website package and code search did not identify an object-storage SDK or upload adapter. The current publication model still stores asset URLs in PublicationAsset.
+
+**Render — repository-side evidence only**
+- No Render manifest or Render deployment reference was found in either active Baribudos repository.
+- The Render account/service configuration could not be inspected in this run. Service type, deploy command, persistent disk, mount path, environment-variable names and retention/backup policy therefore remain unknown.
+
+**Conclusion**
+- Vercel hosting and a READY production deployment are confirmed, but durable asset storage is not evidenced by the inspected project configuration.
+- This is not proof that no external storage exists outside the inspected repository/account metadata. Keep Website issue #30 open until the actual storage and byte-delivery path are verified.
+- No storage resource, subscription, secret, deployment setting or infrastructure was created or changed.
+
 Before implementing asset delivery:
 
 1. Inventory current Vercel projects, Render services, deployment configuration, environment-variable **names** (never values), persistent disks, mounted paths, build outputs and backup/retention settings.
