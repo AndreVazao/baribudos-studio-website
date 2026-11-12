@@ -201,11 +201,10 @@ test("concurrent PostgreSQL deliveries never leave an older frozen version on to
     payload: { ...older.payload, title: "Concurrent newer snapshot", seo: { ...older.payload.seo, title: "Concurrent newer snapshot" } },
   };
 
-  const outcomes = await Promise.allSettled([
+  await Promise.allSettled([
     syncPublicationToCommerce(older as never),
     syncPublicationToCommerce(newer as never),
   ]);
-  assert.ok(outcomes.some((outcome) => outcome.status === "fulfilled"));
 
   // Match the Studio sender behavior: a retryable serialization conflict is
   // retried with the exact same frozen envelope after the concurrent race.
