@@ -79,3 +79,24 @@ export function asHttpErrorStatus(error: unknown, fallback = 400) {
   }
   return fallback
 }
+
+export function buildPublicationErrorResponse(error: unknown, fallback = 500) {
+  const retryableConflict = isRetryablePrismaTransactionConflict(error)
+  const status = asHttpErrorStatus(error, fallback)
+
+  return {
+    status,
+    body: {
+      ok: false,
+      error: retryableConflict
+        ? "retryable_transaction_conflict"
+        : status >= 500
+          ? "internal_error"
+          : error instanceof Error
+            ? error.message
+            : "request_failed",
+      ...(retryableConflict ? { retryable: true } : {}),
+    },
+    retryAfter: retryableConflict ? "1" : null,
+  }
+}
