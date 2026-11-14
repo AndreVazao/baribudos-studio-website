@@ -11,6 +11,21 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    # Ephemeral database only; production Supabase is never used by CI.
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: baribudos
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U user -d baribudos"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     permissions:
       contents: read
     env:
@@ -45,8 +60,17 @@ jobs:
       - name: Prisma generate
         run: npx prisma generate
 
+      - name: Prepare isolated PostgreSQL schema
+        run: npx prisma db push --skip-generate
+
       - name: Typecheck
         run: npm run typecheck
+
+      - name: Unit tests
+        run: npm test
+
+      - name: PostgreSQL integration tests
+        run: npx --yes tsx@4.19.2 --test tests/publication-sync.integration.test.ts
 
       - name: Build
         run: npm run ci:build

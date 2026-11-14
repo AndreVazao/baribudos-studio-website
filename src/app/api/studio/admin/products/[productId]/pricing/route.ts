@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { assertStudioApiKey } from "@/lib/auth";
+import { assertStudioApiKey, asHttpErrorStatus } from "@/lib/auth";
 
 export async function PATCH(
   request: Request,
@@ -14,53 +14,53 @@ export async function PATCH(
     const priceCents = Number(body?.price_cents);
     const currency = String(body?.currency || "EUR").trim().toUpperCase();
 
-    if (!Number.isInteger(priceCents) || priceCents < 0) {
+    if (!Number.isSafeInteger(priceCents) || priceCents < 0) {
       return NextResponse.json({ ok: false, error: "invalid_price_cents" }, { status: 400 });
     }
 
-    if (!currency) {
+    if (!/^[A-Z]{3}$/.test(currency)) {
       return NextResponse.json({ ok: false, error: "invalid_currency" }, { status: 400 });
     }
 
-    const product = await prisma.product.update({
-      where: { id: productId },
-      data: {
-        priceCents,
-        currency,
-      },
-      include: {
-        variant: true,
-      },
-    });
+    const result = await prisma.$transaction(async (tx) => {
+      const product = await tx.product.update({
+        where: { id: productId },
+        data: { priceCents, currency },
+        include: { variant: true },
+      });
 
-    await prisma.publicationVariant.update({
-      where: { variantId: product.variant.variantId },
-      data: {
-        price: Number((priceCents / 100).toFixed(2)),
-        currency,
-      },
+      await tx.publicationVariant.update({
+        where: { variantId: product.variant.variantId },
+        data: {
+          price: Number((priceCents / 100).toFixed(2)),
+          currency,
+        },
+      });
+
+      return product;
     });
 
     return NextResponse.json({
       ok: true,
       product: {
-        id: product.id,
-        slug: product.slug,
-        title: product.title,
-        type: product.type,
-        active: product.active,
-        featured: product.featured,
-        price_cents: product.priceCents,
-        currency: product.currency,
-        variant_id: product.variant.variantId,
-        project_id: product.variant.projectId,
-        updated_at: product.updatedAt,
+        id: result.id,
+        slug: result.slug,
+        title: result.title,
+        type: result.type,
+        active: result.active,
+        featured: result.featured,
+        price_cents: result.priceCents,
+        currency: result.currency,
+        variant_id: result.variant.variantId,
+        project_id: result.variant.projectId,
+        updated_at: result.updatedAt,
       },
     });
   } catch (error) {
+    const status = asHttpErrorStatus(error, 500);
     return NextResponse.json(
-      { ok: false, error: error instanceof Error ? error.message : "Erro interno." },
-      { status: 400 }
+      { ok: false, error: status === 500 ? "internal_error" : (error instanceof Error ? error.message : "request_failed") },
+      { status }
     );
   }
 }
