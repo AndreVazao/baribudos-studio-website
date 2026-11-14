@@ -153,3 +153,38 @@ A Vercel deployment or a URL stored in PostgreSQL is not, by itself, proof of du
 - No channel adapter may submit content until Studio approval, rights and destination-specific validation are represented and auditable.
 
 **Next engineering priority:** complete Website asset autonomy and the current Studio → Website ingest integrity work before implementing external publishing. External distribution must never make the Website dependent on the Studio being online.
+
+
+## 8. Operational recheck — 14 Nov 2026
+
+This snapshot supersedes the earlier 12 Nov verification where the newer account-level evidence differs. It records configuration and read-only observations only; it does not authorize infrastructure or credential changes.
+
+### Vercel
+
+- Project `baribudos-studio-website` is linked to the Website repository and uses Next.js.
+- Production deployment is **READY** at commit `f93a76a2c59850f9c8d03ab2eeb48001b2b4c70c`.
+- The current Website PR #26 preview is **READY** at `1ebbbb400a8e0a5924e807e0a6bee2108238b67e`; its Website CI #165 passed Prisma generation, isolated PostgreSQL preparation, typecheck, unit tests, PostgreSQL integration tests and build.
+- An anonymous live fetch of `/loja` returned HTTP 200 and the public storefront shell. It displayed no product cards because the commercial catalog is empty; this is not evidence that checkout or purchased downloads work.
+- The project exposes 14 environment-variable names. Values were not decrypted or inspected. Vercel metadata marked `readable-secret` for `DATABASE_URL`, `NEXTAUTH_SECRET`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `PAYPAL_SECRET`, `STUDIO_API_KEY`, `STUDIO_ENDPOINT_SECRET` and `ADMIN_PANEL_KEY`. Track the review in [Website issue #37](https://github.com/AndreVazao/baribudos-studio-website/issues/37); this flag is a reason to verify visibility, not proof that a value was exposed. Do not rotate credentials without a coordinated plan.
+
+### Supabase and catalog
+
+- The connected project `baribudos-studio-website` is `ACTIVE_HEALTHY` on PostgreSQL 17.6.1.
+- Read-only counts on 14 Nov returned zero rows in `Product`, `Publication`, `PublicationVariant` and `PublicationAsset`.
+- Read-only counts returned zero rows in `storage.buckets` and `storage.objects`.
+- No synthetic catalog entries or assets were inserted.
+
+The public Website is reachable, but there is currently no commercial product/catalog data to sell. The database is healthy; the next step is reconciling genuine Studio publication receipts and approved catalogue data, not creating test products in production.
+
+### Render and asset autonomy
+
+- No Render manifest or deployment reference was found in either active repository.
+- The connected toolset did not expose a Render account/service inspection capability in this run; service type, persistent disk, mount path, deploy command and backup/retention remain unverified.
+- No dedicated asset storage was evidenced in the Vercel project inventory or Website code. Supabase Storage currently has zero buckets and objects.
+- This does not rule out an external storage service configured outside the inspected project metadata. Keep issue #30 open until the Render account and every actual asset byte path are verified.
+
+### Current no-go conditions
+
+1. Do not claim Website sales autonomy while the catalog is empty and asset bytes are not materialized in durable Website-controlled storage.
+2. Do not merge Website PR #26 yet: it remains two commits behind `main` (the intervening commits are roadmap documentation), and `Product.publicationVariantId` has no declarative uniqueness guarantee for the active product per variant.
+3. Do not create buckets, persistent disks, object storage, secrets, paid resources or deployment changes without explicit approval.
