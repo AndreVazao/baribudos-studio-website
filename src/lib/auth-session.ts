@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { SignJWT, jwtVerify } from "jose";
 import { prisma } from "@/lib/prisma";
+import { getActiveSessionUser } from "@/lib/session-policy.mjs";
 
 type SessionPayload = {
   sub: string;
@@ -56,7 +57,7 @@ export async function getCurrentUser() {
     where: { id: session.sub },
   });
 
-  return user?.isActive ? user : null;
+  return getActiveSessionUser(user);
 }
 
 export async function requireUser() {
