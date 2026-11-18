@@ -168,3 +168,47 @@ Confirmed in this audit:
 - Render account configuration remains unverified.
 
 No production database, deployment, domain, credential, storage or billing setting was changed.
+
+
+## 7. Revalidação operacional — 18 de novembro de 2026
+
+### Vercel e acesso público
+
+- Projeto: `baribudos-studio-website`, Next.js.
+- Deployment de produção mais recente: READY no commit main `e72c08ffada86aadafe89674c4aa92fa590f4148`.
+- O deployment mais recente no momento da consulta era um preview da PR #29, também READY; não foi confundido com produção.
+- `ssoProtection.enabled=true` e `deploymentType=all_except_custom_domains`; `passwordProtection=false`; `trustedIps=false`.
+- A configuração lista três domínios Vercel `*.vercel.app` e nenhum domínio customizado. A configuração indica proteção SSO nos domínios Vercel listados; acesso público anónimo não está demonstrado.
+- A tentativa de leitura anónima não pôde ser concluída: Browser Use sem créditos e fetch web inacessível. Não foi observado nem inventado um HTTP 401/403.
+- Não foram alterados domínios, SSO, aliases ou deployments.
+
+### Supabase — atualização de segurança e catálogo
+
+- Supabase continua `ACTIVE_HEALTHY`, PostgreSQL 17.6.1, região `eu-west-1`.
+- Security Advisor em 18 Nov 10:49 UTC voltou a devolver `rls_disabled_in_public` como ERROR / EXTERNAL para `public.system_metadata`.
+- RLS e FORCE RLS continuam desativados; existem 2 linhas e zero políticas. Os valores das linhas não foram lidos.
+- `anon` e `authenticated` continuam com SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES e TRIGGER. RLS sozinho não revoga os últimos três privilégios.
+- A história de migrations continua a expor apenas `20260527185301 / phase_42_3_lite_stabilization`. Não executar DDL até recuperar baseline e identificar consumidores externos.
+- Contagens exatas: Product 0, Publication 0, PublicationVariant 0, PublicationAsset 0, BundleGroup 0, Checkout 0; Supabase Storage buckets 0 e objects 0.
+
+### Storage, Render e autonomia
+
+- A listagem de integration configurations Vercel no âmbito do projeto devolveu lista vazia. O conector não expõe uma listagem completa de Vercel Storage stores; não concluir que não existe qualquer store externo.
+- Não há conector Render disponível nesta sessão e não foi encontrado manifest `render.yaml`/configuração explícita de serviço ou disco nos repositórios ativos. A conta Render não foi inspecionada; serviços e discos permanecem desconhecidos.
+- A ingestão Website continua a guardar URLs de origem em `PublicationAsset.fileUrl`; não prova materialização dos bytes nem autonomia face ao Studio desligado.
+
+### PRs e critérios de integração
+
+- PR #26: 45 commits à frente e 0 atrás de main; Website CI #170 e Repository Visibility Only #164 passaram; preview READY. Mantém-se Draft. `Product.publicationVariantId` não tem constraint UNIQUE; a baseline de migrations continua incompleta; materialização durável de assets continua pendente.
+- PR #27: acrescentados helper puro e quatro testes da política de sessão ativa; Website CI #176 e Repository Visibility Only #170 passaram; preview READY. Os testes cobrem o helper, não o ciclo completo JWT-cookie + utilizador desativado + biblioteca/checkout. Mantém-se Draft.
+- PRs #28 e #29: CI e previews anteriores passaram, mas continuam Draft sem testes de integração dedicados de pagamento/replay.
+- PR #41 foi integrada em main; Website CI #44068506534, Repository Visibility #44068506634 e deployment de produção associado ficaram verdes/READY.
+
+### No-go e próxima sequência
+
+- Não abrir o storefront ao público apenas com base em deployment READY: resolver configuração de acesso/domínio e executar teste anónimo real.
+- Não aplicar RLS/grants, migrations, criar storage, alterar SSO/domínios ou contratar recursos sem baseline, consumidores e autorização adequados.
+- Fechar segurança Supabase; fechar testes de pagamento e sessão; recuperar baseline; estabelecer unicidade comercial declarativa; materializar e servir assets com MIME, tamanho, SHA-256 e retries; provar checkout/downloads com Studio desligado.
+- Distribuição externa (ebooks, audiobooks e YouTube/YouTube Kids) continua fase posterior, com aprovação por canal no Studio e mecanismos oficiais; não presumir API direta de YouTube Kids.
+
+Nenhum DDL, write de catálogo, segredo, credencial, recurso pago, domínio ou setting de infraestrutura foi alterado nesta revalidação.
