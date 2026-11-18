@@ -188,3 +188,15 @@ The public Website is reachable, but there is currently no commercial product/ca
 1. Do not claim Website sales autonomy while the catalog is empty and asset bytes are not materialized in durable Website-controlled storage.
 2. Do not merge Website PR #26 yet: it remains two commits behind `main` (the intervening commits are roadmap documentation), and `Product.publicationVariantId` has no declarative uniqueness guarantee for the active product per variant.
 3. Do not create buckets, persistent disks, object storage, secrets, paid resources or deployment changes without explicit approval.
+
+
+## 9. Recheck de prontidão — 18 de novembro de 2026
+
+- Phase A (autonomia do Website) continua bloqueante: Supabase Storage confirmou 0 buckets/0 objects e o modelo atual persiste URLs de origem, não bytes materializados.
+- A configuração Vercel consultada tem SSO ativo para os domínios Vercel listados e não apresenta domínio customizado. A montra pública ainda não tem acesso anónimo demonstrado.
+- Render permanece por verificar na conta; não foi encontrado manifest de serviço/disco nos repositórios ativos e não há conector Render disponível nesta sessão.
+- Não há catálogo de produção: Product, Publication, PublicationVariant, PublicationAsset, BundleGroup e Checkout continuam com zero registos. Nenhuma publicação comercial real foi criada.
+- As fases ebook/audiobook/YouTube continuam planeadas, sem contas, APIs/partner access, direitos territoriais ou adaptadores de submissão confirmados. O YouTube Kids não deve ser tratado como destino com API de publicação direta; seguir o fluxo oficial YouTube/YouTube Studio, classificação de audiência e elegibilidade real.
+- Não iniciar submissões externas até a publicação Website estar autónoma, existir aprovação explícita do Studio por canal, direitos/licenças e termos comerciais estarem validados, e a auditoria/reconciliação ser operacional.
+
+Prioridade mantém-se: concluir materialização durável e checkout autónomo antes da distribuição multicanal.
