@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { SignJWT, jwtVerify } from "jose";
 import { prisma } from "@/lib/prisma";
+import { getActiveSessionUser } from "@/lib/session-policy.mjs";
 
 type SessionPayload = {
   sub: string;
@@ -52,9 +53,11 @@ export async function getCurrentUser() {
   const session = await getCurrentSession();
   if (!session?.sub) return null;
 
-  return prisma.user.findUnique({
+  const user = await prisma.user.findUnique({
     where: { id: session.sub },
   });
+
+  return getActiveSessionUser(user);
 }
 
 export async function requireUser() {

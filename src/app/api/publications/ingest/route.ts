@@ -1,13 +1,21 @@
 import { NextResponse } from "next/server";
-import { assertStudioApiKey } from "@/lib/auth";
+import { ZodError } from "zod";
+import { assertStudioApiKey, buildPublicationErrorResponse } from "@/lib/auth";
 import { publicationIngestSchema } from "@/lib/publication-schema";
+import { verifyPublicationChecksum } from "@/lib/publication-checksum";
 import { syncPublicationToCommerce } from "@/lib/sync-commerce";
 
 export async function POST(request: Request) {
   try {
     assertStudioApiKey(request);
 
-    const json = await request.json();
+    const rawBody = await request.text();
+    if (!verifyPublicationChecksum(rawBody)) {
+      const checksumError = Object.assign(new Error("publication_checksum_mismatch"), { status: 400 });
+      throw checksumError;
+    }
+
+    const json = JSON.parse(rawBody);
     const input = publicationIngestSchema.parse(json);
     const result = await syncPublicationToCommerce(input);
 
@@ -22,12 +30,14 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
-    return NextResponse.json(
-      {
-        ok: false,
-        error: error instanceof Error ? error.message : "Erro interno.",
-      },
-      { status: 400 }
-    );
+    const fallback = error instanceof ZodError || error instanceof SyntaxError ? 400 : 500;
+    const failure = buildPublicationErrorResponse(error, fallback);
+    const response = NextResponse.json(failure.body, { status: failure.status });
+
+    if (failure.retryAfter) {
+      response.headers.set("Retry-After", failure.retryAfter);
+    }
+
+    return response;
   }
-          }
+}

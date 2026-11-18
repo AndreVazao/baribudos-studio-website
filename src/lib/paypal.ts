@@ -75,15 +75,21 @@ export async function createPayPalOrder(args: {
   return response.json()
 }
 
-export async function capturePayPalOrder(orderId: string) {
+export async function capturePayPalOrder(orderId: string, requestId?: string) {
   const token = await getPayPalAccessToken()
 
-  const response = await fetch(`${getBaseUrl()}/v2/checkout/orders/${orderId}/capture`, {
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${token.access_token}`,
+    "Content-Type": "application/json",
+  }
+
+  if (requestId) {
+    headers["PayPal-Request-Id"] = requestId
+  }
+
+  const response = await fetch(`${getBaseUrl()}/v2/checkout/orders/${encodeURIComponent(orderId)}/capture`, {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${token.access_token}`,
-      "Content-Type": "application/json",
-    },
+    headers,
     cache: "no-store",
   })
 
