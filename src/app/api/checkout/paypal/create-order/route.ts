@@ -2,18 +2,32 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createPayPalOrder } from "@/lib/paypal";
 import { getCurrentUser } from "@/lib/auth-session";
+import { paymentErrorPayload } from "@/lib/payment-error.mjs";
 
 export async function POST(request: Request) {
+  let body: unknown;
   try {
-    const { productId, email } = await request.json();
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "JSON inválido." }, { status: 400 });
+  }
 
-    if (!productId) {
-      return NextResponse.json(
-        { error: "productId é obrigatório." },
-        { status: 400 }
-      );
-    }
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return NextResponse.json({ error: "Pedido inválido." }, { status: 400 });
+  }
 
+  const input = body as { productId?: unknown; email?: unknown };
+  const productId = typeof input.productId === "string" ? input.productId.trim() : "";
+  const email = input.email;
+
+  if (!productId) {
+    return NextResponse.json(
+      { error: "productId é obrigatório." },
+      { status: 400 }
+    );
+  }
+
+  try {
     const currentUser = await getCurrentUser();
     const normalizedEmail = currentUser?.email || String(email || "").toLowerCase().trim();
 
@@ -80,7 +94,7 @@ export async function POST(request: Request) {
     if (!approveUrl) {
       return NextResponse.json(
         { error: "Link de aprovação PayPal não encontrado." },
-        { status: 400 }
+        { status: 502 }
       );
     }
 
@@ -88,12 +102,10 @@ export async function POST(request: Request) {
       ok: true,
       approveUrl,
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : "Erro interno.",
-      },
-      { status: 400 }
+      paymentErrorPayload("checkout_creation_failed"),
+      { status: 500 }
     );
   }
-      }
+}
