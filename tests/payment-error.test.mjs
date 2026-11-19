@@ -26,9 +26,12 @@ test("checkout creation and capture use separate public error codes", () => {
   });
 });
 
-test("invalid webhook signature has a generic public code", () => {
+test("invalid webhook signature and configuration errors are distinct", () => {
   assert.deepEqual(paymentErrorPayload("invalid_webhook_signature"), {
     error: "invalid_webhook_signature",
+  });
+  assert.deepEqual(paymentErrorPayload("webhook_configuration_error"), {
+    error: "webhook_configuration_error",
   });
 });
 
@@ -45,4 +48,10 @@ test("payment route handlers do not serialize raw exception messages", async () 
     assert.match(source, /paymentErrorPayload\(/, path);
     assert.doesNotMatch(source, /error:\s*error\.message/, path);
   }
+});
+
+test("Stripe webhook configuration failure remains retryable while bad signatures are rejected", async () => {
+  const source = await readFile(new URL("../src/app/api/webhook/stripe/route.ts", import.meta.url), "utf8");
+  assert.match(source, /webhook_configuration_error[\s\S]*status:\s*500/);
+  assert.match(source, /invalid_webhook_signature[\s\S]*status:\s*400/);
 });
