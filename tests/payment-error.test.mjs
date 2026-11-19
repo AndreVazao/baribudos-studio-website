@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { paymentErrorPayload } from "../src/lib/payment-error.mjs";
 
@@ -29,4 +30,19 @@ test("invalid webhook signature has a generic public code", () => {
   assert.deepEqual(paymentErrorPayload("invalid_webhook_signature"), {
     error: "invalid_webhook_signature",
   });
+});
+
+test("payment route handlers do not serialize raw exception messages", async () => {
+  const routePaths = [
+    "../src/app/api/checkout/stripe/route.ts",
+    "../src/app/api/checkout/paypal/create-order/route.ts",
+    "../src/app/api/checkout/paypal/capture-order/route.ts",
+    "../src/app/api/webhook/stripe/route.ts",
+  ];
+
+  for (const path of routePaths) {
+    const source = await readFile(new URL(path, import.meta.url), "utf8");
+    assert.match(source, /paymentErrorPayload\(/, path);
+    assert.doesNotMatch(source, /error:\s*error\.message/, path);
+  }
 });
