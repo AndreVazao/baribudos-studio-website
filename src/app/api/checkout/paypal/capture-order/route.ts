@@ -2,16 +2,28 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { capturePayPalOrder } from "@/lib/paypal";
 import { isValidPayPalCapture, fulfillPaidCheckout } from "@/lib/payment-fulfillment";
+import { paymentErrorPayload } from "@/lib/payment-error.mjs";
 
 export async function POST(request: Request) {
+  let body: unknown;
   try {
-    const body = await request.json();
-    const orderId = typeof body?.orderId === "string" ? body.orderId.trim() : "";
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "JSON inválido." }, { status: 400 });
+  }
 
-    if (!orderId || orderId.length > 128) {
-      return NextResponse.json({ error: "orderId inválido." }, { status: 400 });
-    }
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return NextResponse.json({ error: "Pedido inválido." }, { status: 400 });
+  }
 
+  const input = body as { orderId?: unknown };
+  const orderId = typeof input.orderId === "string" ? input.orderId.trim() : "";
+
+  if (!orderId || orderId.length > 128) {
+    return NextResponse.json({ error: "orderId inválido." }, { status: 400 });
+  }
+
+  try {
     // Resolve the local checkout before calling PayPal. Never capture an arbitrary
     // provider order that is not linked to a checkout created by this application.
     const checkout = await prisma.checkout.findUnique({
@@ -79,12 +91,10 @@ export async function POST(request: Request) {
       ok: true,
       successUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/biblioteca`,
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : "Erro interno.",
-      },
-      { status: 400 }
+      paymentErrorPayload("payment_capture_failed"),
+      { status: 500 }
     );
   }
 }

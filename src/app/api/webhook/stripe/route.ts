@@ -3,30 +3,40 @@ import Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
 import { isValidStripePaidSession, fulfillPaidCheckout } from "@/lib/payment-fulfillment";
+import { paymentErrorPayload } from "@/lib/payment-error.mjs";
 
 export async function POST(request: Request) {
   const body = await request.text();
   const signature = request.headers.get("stripe-signature");
 
   if (!signature) {
-    return NextResponse.json({ error: "Missing signature." }, { status: 400 });
+    return NextResponse.json(paymentErrorPayload("invalid_webhook_signature"), { status: 400 });
+  }
+
+  let stripe: Stripe;
+  try {
+    stripe = getStripe();
+  } catch {
+    return NextResponse.json(
+      paymentErrorPayload("webhook_configuration_error"),
+      { status: 500 }
+    );
+  }
+
+  const webhookSecret = String(process.env.STRIPE_WEBHOOK_SECRET || "").trim();
+  if (!webhookSecret) {
+    return NextResponse.json(
+      paymentErrorPayload("webhook_configuration_error"),
+      { status: 500 }
+    );
   }
 
   let event: Stripe.Event;
-
   try {
-    const stripe = getStripe();
-
-    event = stripe.webhooks.constructEvent(
-      body,
-      signature,
-      process.env.STRIPE_WEBHOOK_SECRET as string
-    );
-  } catch (error) {
+    event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+  } catch {
     return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : "Webhook inválido.",
-      },
+      paymentErrorPayload("invalid_webhook_signature"),
       { status: 400 }
     );
   }
