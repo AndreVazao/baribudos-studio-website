@@ -1,0 +1,32 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { paymentErrorPayload } from "../src/lib/payment-error.mjs";
+
+test("payment failures expose only stable public codes", () => {
+  const internalErrors = [
+    new Error("PayPal response included a provider diagnostic"),
+    new Error("Prisma transaction failed with P2034"),
+    new Error("database connection string details"),
+  ];
+
+  for (const error of internalErrors) {
+    const payload = paymentErrorPayload("payment_processing_failed");
+    assert.deepEqual(payload, { error: "payment_processing_failed" });
+    assert.equal(JSON.stringify(payload).includes(error.message), false);
+  }
+});
+
+test("checkout creation and capture use separate public error codes", () => {
+  assert.deepEqual(paymentErrorPayload("checkout_creation_failed"), {
+    error: "checkout_creation_failed",
+  });
+  assert.deepEqual(paymentErrorPayload("payment_capture_failed"), {
+    error: "payment_capture_failed",
+  });
+});
+
+test("invalid webhook signature has a generic public code", () => {
+  assert.deepEqual(paymentErrorPayload("invalid_webhook_signature"), {
+    error: "invalid_webhook_signature",
+  });
+});
