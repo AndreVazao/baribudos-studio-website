@@ -3,13 +3,14 @@ import Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
 import { isValidStripePaidSession, fulfillPaidCheckout } from "@/lib/payment-fulfillment";
+import { paymentErrorPayload } from "@/lib/payment-error.mjs";
 
 export async function POST(request: Request) {
   const body = await request.text();
   const signature = request.headers.get("stripe-signature");
 
   if (!signature) {
-    return NextResponse.json({ error: "Missing signature." }, { status: 400 });
+    return NextResponse.json(paymentErrorPayload("invalid_webhook_signature"), { status: 400 });
   }
 
   let event: Stripe.Event;
@@ -22,11 +23,9 @@ export async function POST(request: Request) {
       signature,
       process.env.STRIPE_WEBHOOK_SECRET as string
     );
-  } catch (error) {
+  } catch {
     return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : "Webhook inválido.",
-      },
+      paymentErrorPayload("invalid_webhook_signature"),
       { status: 400 }
     );
   }
