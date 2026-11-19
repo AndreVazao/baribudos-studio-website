@@ -13,16 +13,27 @@ export async function POST(request: Request) {
     return NextResponse.json(paymentErrorPayload("invalid_webhook_signature"), { status: 400 });
   }
 
-  let event: Stripe.Event;
-
+  let stripe: Stripe;
   try {
-    const stripe = getStripe();
-
-    event = stripe.webhooks.constructEvent(
-      body,
-      signature,
-      process.env.STRIPE_WEBHOOK_SECRET as string
+    stripe = getStripe();
+  } catch {
+    return NextResponse.json(
+      paymentErrorPayload("webhook_configuration_error"),
+      { status: 500 }
     );
+  }
+
+  const webhookSecret = String(process.env.STRIPE_WEBHOOK_SECRET || "").trim();
+  if (!webhookSecret) {
+    return NextResponse.json(
+      paymentErrorPayload("webhook_configuration_error"),
+      { status: 500 }
+    );
+  }
+
+  let event: Stripe.Event;
+  try {
+    event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
   } catch {
     return NextResponse.json(
       paymentErrorPayload("invalid_webhook_signature"),
