@@ -62,6 +62,7 @@ test("guest checkout requires its own unexpired capability", () => {
     ok: true,
     mode: "guest",
     capabilityHash: issued.tokenHash,
+    authorizedAt: now,
   });
   assert.equal(authorizePayPalCapture({ checkout: value, currentUserId: null, capability: null, now }).ok, false);
   assert.equal(authorizePayPalCapture({ checkout: value, currentUserId: null, capability: "wrong", now }).ok, false);
