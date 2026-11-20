@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 import {
   authorizePayPalCapture,
@@ -150,4 +151,24 @@ test("capture POST accepts only an exact same-origin Origin header", () => {
   assert.equal(isSameOriginPayPalCaptureRequest("https://shop.example/path", "https://shop.example/api/capture"), false);
   assert.equal(isSameOriginPayPalCaptureRequest(null, "https://shop.example/api/capture"), false);
   assert.equal(isSameOriginPayPalCaptureRequest("null", "https://shop.example/api/capture"), false);
+});
+
+
+test("PayPal routes enforce the owner-or-capability contract and never return the raw capability", async () => {
+  const createRoute = await readFile(new URL("../src/app/api/checkout/paypal/create-order/route.ts", import.meta.url), "utf8");
+  const captureRoute = await readFile(new URL("../src/app/api/checkout/paypal/capture-order/route.ts", import.meta.url), "utf8");
+
+  assert.match(createRoute, /captureCapabilityHash:\s*guestCapability\.tokenHash/);
+  assert.match(createRoute, /httpOnly:\s*true/);
+  assert.match(createRoute, /secure:\s*process\.env\.NODE_ENV\s*===\s*"production"/);
+  assert.match(createRoute, /path:\s*PAYPAL_CAPTURE_COOKIE_PATH/);
+  assert.doesNotMatch(createRoute, /token:\s*guestCapability\.token/);
+
+  assert.match(captureRoute, /isSameOriginPayPalCaptureRequest\(/);
+  assert.match(captureRoute, /getCurrentUser\(/);
+  assert.match(captureRoute, /authorizePayPalCapture\(/);
+  assert.match(captureRoute, /cookieStore\.get\(getPayPalCaptureCookieName\(orderId\)\)/);
+  assert.ok(captureRoute.indexOf("authorizePayPalCapture(") < captureRoute.indexOf("capturePayPalOrder("));
+  assert.match(captureRoute, /maxAge:\s*0/);
+  assert.doesNotMatch(captureRoute, /capability\?:\s*unknown/);
 });
