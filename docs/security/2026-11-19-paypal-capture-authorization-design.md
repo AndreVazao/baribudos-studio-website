@@ -73,3 +73,13 @@ Failures before provider capture leave checkout pending. If provider capture is 
 - No PayPal sandbox or live payment calls.
 - No production schema, data, credentials, secrets, permissions, deployment or infrastructure inspected/changed.
 - No conclusion that a particular provider order ID is currently exposed; that requires tracing the checkout client and PayPal return flow.
+
+## Product-owner boundary: Studio vs public Website (2026-11-20)
+
+- **Studio is private household production/editorial software**, restricted to the owner and explicitly authorized close family (wife and children). It is not public, a SaaS product, or a customer portal.
+- **The Website is the public commerce/distribution surface**, controlled by the family/owner as producer and publisher. Catalog, prices, publication, administration and operations remain owner-side capabilities.
+- **Website customer accounts are customer-only.** They may access their own account, checkout, orders, receipts/support and purchased library, subject to authorization. They must never access Studio, Studio APIs, production projects, drafts/manuscripts, IP/canon, private media/voices/consents, production pipelines, administrative or commercial controls, pricing/catalog management, publication or internal operations.
+- Studio and Website customer authentication are distinct trust boundaries: no shared credentials, session, implicit SSO or session acceptance across systems. Studio-to-Website publishing is an authenticated server-to-server integration for editorially approved, versioned and checksum-verified packages.
+- UI hiding is not authorization. Enforce customer-vs-owner/admin permissions server-side and at data/storage boundaries. Capture authorization grants access only to the matching checkout context and never administrative or Studio capabilities.
+
+This is an owner-confirmed architecture requirement; it does not change runtime or imply these boundaries have already been verified in production.
