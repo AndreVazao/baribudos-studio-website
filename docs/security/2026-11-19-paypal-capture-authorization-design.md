@@ -91,7 +91,7 @@ A focused implementation is now proposed on branch `security/paypal-capture-capa
 
 - Guest orders receive a cryptographically random 256-bit capability. Only its SHA-256 hash, expiry and consumed timestamp are stored on the local checkout.
 - The raw capability is set only in a checkout-specific HttpOnly cookie, scoped to the capture endpoint, SameSite=Lax, Secure in production, and valid for 15 minutes. It is not returned in JSON, placed in the PayPal URL or sent to PayPal.
-- Authenticated checkouts require the active server-side session owner to match `Checkout.userId`. Guest checkouts require the matching capability; a logged-in session for a different user does not override the guest checkout context.
+- Authenticated checkouts verify the signed Website JWT, resolve an active user record server-side, and require that user ID to match `Checkout.userId`. The current JWT is stateless with a 30-day expiry; logout clears the browser cookie but does not revoke a copied JWT. This PR does not implement individually revocable persisted sessions. Guest checkouts require the matching capability; a logged-in session for a different user does not override the guest checkout context.
 - Capture rejects a missing or cross-origin Origin header. The provider order ID remains a lookup reference, not authorization.
 - The guest capability is consumed by the same conditional database update that changes the checkout from PENDING to PAID. The entitlement writes remain in the same Prisma transaction. A consumed capability can only replay the already-paid result while still valid; it cannot initiate another capture.
 - PayPal continues to receive the stable local checkout ID as `PayPal-Request-Id`, preserving provider retry behavior.
@@ -103,3 +103,12 @@ A focused implementation is now proposed on branch `security/paypal-capture-capa
 - Existing guest PayPal orders created before this capability is deployed have no capability cookie/hash. They must be allowed to expire or be otherwise reconciled before rollout; do not add an insecure fallback to order-ID-only capture.
 - No PayPal sandbox/live calls, production database writes, deployments, secret changes or infrastructure changes were performed in this implementation pass.
 - The PR must remain Draft until CI, route tests, disposable-PostgreSQL concurrency tests, migration review and the deployment compatibility plan are all verified.
+
+
+## Handler-test follow-up — 20 Nov 2026
+
+The capture route now delegates its request/authorization/provider/fulfillment decision flow to `src/lib/paypal-capture-handler.ts`. The Next.js adapter supplies Prisma, cookies, the Website user resolver and the PayPal provider, then applies the returned status/body and clears the guest capability cookie after an authorized successful guest replay/capture.
+
+`tests/paypal-capture-handler.test.mjs` invokes that exact framework-independent handler with a real Fetch `Request` and injected dependencies. It covers Origin denial before lookup, malformed/non-object bodies, invalid order IDs, missing/wrong-provider checkout, authentication and owner denial, missing guest capability, paid replay, non-pending state, authenticated success, guest success, invalid provider response, provider exception sanitization and fulfillment conflict. This is stronger than a source-order assertion, but it is **not** a Next.js adapter/cookie-jar integration test, a live PayPal test or a PostgreSQL concurrency test.
+
+The handler refactor does not reserve a checkout before the external PayPal call. Two concurrent requests can still reach the provider; the local PENDING-to-PAID transaction protects entitlement/state idempotency, not provider-call serialization. Provider timeout-after-success and reconciliation remain rollout blockers.
