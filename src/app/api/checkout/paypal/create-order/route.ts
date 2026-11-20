@@ -2,6 +2,12 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createPayPalOrder } from "@/lib/paypal";
 import { getCurrentUser } from "@/lib/auth-session";
+import {
+  createPayPalCaptureCapability,
+  getPayPalCaptureCookieName,
+  PAYPAL_CAPTURE_CAPABILITY_TTL_SECONDS,
+  PAYPAL_CAPTURE_COOKIE_PATH,
+} from "@/lib/paypal-capture-capability.mjs";
 import { paymentErrorPayload } from "@/lib/payment-error.mjs";
 
 export async function POST(request: Request) {
@@ -81,27 +87,51 @@ export async function POST(request: Request) {
       description: product.title,
       customId: checkout.id,
     });
+    const orderId = typeof order?.id === "string" ? order.id.trim() : "";
+    const approveUrl = Array.isArray(order?.links)
+      ? order.links.find((link: { rel?: string }) => link.rel === "approve")?.href
+      : null;
 
-    await prisma.checkout.update({
-      where: { id: checkout.id },
-      data: {
-        providerRef: order.id,
-      },
-    });
-
-    const approveUrl = order.links.find((link: any) => link.rel === "approve")?.href;
-
-    if (!approveUrl) {
+    if (!orderId || orderId.length > 128 || typeof approveUrl !== "string" || !approveUrl) {
       return NextResponse.json(
-        { error: "Link de aprovação PayPal não encontrado." },
+        { error: "Resposta PayPal inválida." },
         { status: 502 }
       );
     }
 
-    return NextResponse.json({
+    // Guest checkout receives a checkout-specific HttpOnly cookie. The raw
+    // capability is never persisted or returned in the JSON response.
+    const guestCapability = currentUser ? null : createPayPalCaptureCapability();
+
+    await prisma.checkout.update({
+      where: { id: checkout.id },
+      data: {
+        providerRef: orderId,
+        ...(guestCapability
+          ? {
+              captureCapabilityHash: guestCapability.tokenHash,
+              captureCapabilityExpiresAt: guestCapability.expiresAt,
+            }
+          : {}),
+      },
+    });
+
+    const response = NextResponse.json({
       ok: true,
       approveUrl,
     });
+
+    if (guestCapability) {
+      response.cookies.set(getPayPalCaptureCookieName(orderId), guestCapability.token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: PAYPAL_CAPTURE_COOKIE_PATH,
+        maxAge: PAYPAL_CAPTURE_CAPABILITY_TTL_SECONDS,
+      });
+    }
+
+    return response;
   } catch {
     return NextResponse.json(
       paymentErrorPayload("checkout_creation_failed"),
