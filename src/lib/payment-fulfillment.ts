@@ -54,6 +54,7 @@ export async function fulfillPaidCheckout(tx: Prisma.TransactionClient, args: { 
 
   // The conditional update is the one-time gate: status, capability hash,
   // expiry and consumption are checked and changed in a single SQL statement.
+  const consumedAt = new Date();
   const transition = await tx.checkout.updateMany({
     where: {
       id: checkout.id,
@@ -70,7 +71,7 @@ export async function fulfillPaidCheckout(tx: Prisma.TransactionClient, args: { 
     },
     data: {
       status: "PAID",
-      ...(isGuestCapabilityCheckout ? { captureCapabilityConsumedAt: now } : {}),
+      ...(isGuestCapabilityCheckout ? { captureCapabilityConsumedAt: consumedAt } : {}),
     },
   });
 
