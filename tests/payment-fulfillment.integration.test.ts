@@ -109,6 +109,7 @@ test("guest capability is required, expires safely and is consumed atomically wi
     provider: "PAYPAL" as const,
     providerRef,
     captureCapabilityHash: guestCapabilityHash,
+    captureCapabilityAuthorizedAt: new Date(),
   };
 
   const wrongCapability = await prisma.$transaction((tx) => fulfillPaidCheckout(tx, {
