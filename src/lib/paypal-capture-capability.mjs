@@ -81,6 +81,7 @@ export function authorizePayPalCapture({ checkout, currentUserId, capability, no
       ok: true,
       mode: "guest",
       capabilityHash: hashPayPalCaptureCapability(capability),
+      authorizedAt: new Date(now.getTime()),
     };
   }
 
