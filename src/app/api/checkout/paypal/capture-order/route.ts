@@ -1,10 +1,42 @@
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/auth-session";
 import { capturePayPalOrder } from "@/lib/paypal";
 import { isValidPayPalCapture, fulfillPaidCheckout } from "@/lib/payment-fulfillment";
+import {
+  authorizePayPalCapture,
+  getPayPalCaptureCookieName,
+  isSameOriginPayPalCaptureRequest,
+  PAYPAL_CAPTURE_COOKIE_PATH,
+} from "@/lib/paypal-capture-capability.mjs";
 import { paymentErrorPayload } from "@/lib/payment-error.mjs";
 
+function buildSuccessResponse(orderId: string, guestCapture: boolean) {
+  const response = NextResponse.json({
+    ok: true,
+    successUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/biblioteca`,
+  });
+
+  if (guestCapture) {
+    response.cookies.set(getPayPalCaptureCookieName(orderId), "", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: PAYPAL_CAPTURE_COOKIE_PATH,
+      maxAge: 0,
+      expires: new Date(0),
+    });
+  }
+
+  return response;
+}
+
 export async function POST(request: Request) {
+  if (!isSameOriginPayPalCaptureRequest(request.headers.get("origin"), request.url)) {
+    return NextResponse.json({ error: "capture_origin_invalid" }, { status: 403 });
+  }
+
   let body: unknown;
   try {
     body = await request.json();
@@ -24,8 +56,8 @@ export async function POST(request: Request) {
   }
 
   try {
-    // Resolve the local checkout before calling PayPal. Never capture an arbitrary
-    // provider order that is not linked to a checkout created by this application.
+    // Resolve the checkout locally; the provider order ID is only a reference,
+    // never an authorization capability.
     const checkout = await prisma.checkout.findUnique({
       where: { providerRef: orderId },
       include: { items: true },
@@ -35,15 +67,32 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Checkout não encontrado." }, { status: 404 });
     }
 
+    const currentUser = await getCurrentUser();
+    const cookieStore = await cookies();
+    const capability = cookieStore.get(getPayPalCaptureCookieName(orderId))?.value ?? null;
+    const authorization = authorizePayPalCapture({
+      checkout,
+      currentUserId: currentUser?.id ?? null,
+      capability,
+    });
+
+    if (!authorization.ok) {
+      const status = authorization.reason === "authentication_required"
+        || authorization.reason === "guest_capability_required"
+        ? 401
+        : 403;
+      return NextResponse.json({ error: "capture_not_authorized" }, { status });
+    }
+
     if (checkout.status === "PAID") {
-      return NextResponse.json({
-        ok: true,
-        successUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/biblioteca`,
-      });
+      return buildSuccessResponse(orderId, authorization.mode === "guest");
     }
 
     if (checkout.status !== "PENDING") {
-      return NextResponse.json({ error: "Checkout não está disponível para pagamento." }, { status: 409 });
+      return NextResponse.json(
+        { error: "Checkout não está disponível para pagamento." },
+        { status: 409 }
+      );
     }
 
     const capture = await capturePayPalOrder(orderId, checkout.id) as {
@@ -75,22 +124,22 @@ export async function POST(request: Request) {
       );
     }
 
-    // Commit payment state and entitlements together. The unique
-    // (userId, productId) key keeps repeated successful captures idempotent.
+    // The guest capability is consumed atomically with PAID + entitlement.
+    // PayPal's request ID remains the local checkout ID for safe provider retry.
     const fulfillment = await prisma.$transaction((tx) => fulfillPaidCheckout(tx, {
       checkoutId: checkout.id,
       provider: "PAYPAL",
       providerRef: orderId,
+      ...(authorization.mode === "guest"
+        ? { captureCapabilityHash: authorization.capabilityHash }
+        : {}),
     }));
 
     if (!fulfillment.ok) {
       return NextResponse.json({ error: fulfillment.reason }, { status: 409 });
     }
 
-    return NextResponse.json({
-      ok: true,
-      successUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/biblioteca`,
-    });
+    return buildSuccessResponse(orderId, authorization.mode === "guest");
   } catch {
     return NextResponse.json(
       paymentErrorPayload("payment_capture_failed"),
