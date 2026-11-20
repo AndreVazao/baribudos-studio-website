@@ -39,7 +39,6 @@ test("payment route handlers do not serialize raw exception messages", async () 
   const routePaths = [
     "../src/app/api/checkout/stripe/route.ts",
     "../src/app/api/checkout/paypal/create-order/route.ts",
-    "../src/app/api/checkout/paypal/capture-order/route.ts",
     "../src/app/api/webhook/stripe/route.ts",
   ];
 
@@ -48,6 +47,18 @@ test("payment route handlers do not serialize raw exception messages", async () 
     assert.match(source, /paymentErrorPayload\(/, path);
     assert.doesNotMatch(source, /error:\s*error\.message/, path);
   }
+
+  const captureRoute = await readFile(
+    new URL("../src/app/api/checkout/paypal/capture-order/route.ts", import.meta.url),
+    "utf8"
+  );
+  const captureHandler = await readFile(
+    new URL("../src/lib/paypal-capture-handler.ts", import.meta.url),
+    "utf8"
+  );
+  assert.match(captureRoute, /paymentErrorPayload,/);
+  assert.match(captureHandler, /paymentErrorPayload\("payment_capture_failed"\)/);
+  assert.doesNotMatch(captureHandler, /error:\s*error\.message/);
 });
 
 test("Stripe webhook configuration failure remains retryable while bad signatures are rejected", async () => {
