@@ -83,3 +83,23 @@ Failures before provider capture leave checkout pending. If provider capture is 
 - UI hiding is not authorization. Enforce customer-vs-owner/admin permissions server-side and at data/storage boundaries. Capture authorization grants access only to the matching checkout context and never administrative or Studio capabilities.
 
 This is an owner-confirmed architecture requirement; it does not change runtime or imply these boundaries have already been verified in production.
+
+
+## Implementation status — 2026-11-20 (Draft PR)
+
+A focused implementation is now proposed on branch `security/paypal-capture-capability-2026-11-20`:
+
+- Guest orders receive a cryptographically random 256-bit capability. Only its SHA-256 hash, expiry and consumed timestamp are stored on the local checkout.
+- The raw capability is set only in a checkout-specific HttpOnly cookie, scoped to the capture endpoint, SameSite=Lax, Secure in production, and valid for 15 minutes. It is not returned in JSON, placed in the PayPal URL or sent to PayPal.
+- Authenticated checkouts require the active server-side session owner to match `Checkout.userId`. Guest checkouts require the matching capability; a logged-in session for a different user does not override the guest checkout context.
+- Capture rejects a missing or cross-origin Origin header. The provider order ID remains a lookup reference, not authorization.
+- The guest capability is consumed by the same conditional database update that changes the checkout from PENDING to PAID. The entitlement writes remain in the same Prisma transaction. A consumed capability can only replay the already-paid result while still valid; it cannot initiate another capture.
+- PayPal continues to receive the stable local checkout ID as `PayPal-Request-Id`, preserving provider retry behavior.
+
+### Validation and rollout gates
+
+- CI uses an ephemeral PostgreSQL service and `prisma db push`; it does not apply production migrations.
+- An additive Prisma migration draft is included for review. The active repository currently has only the historical `20260330_add_saga_visual_sets` migration source, while the production Supabase migration history is separately recorded. The production migration baseline is not reconciled; **do not run `prisma migrate deploy` or apply this SQL to production**.
+- Existing guest PayPal orders created before this capability is deployed have no capability cookie/hash. They must be allowed to expire or be otherwise reconciled before rollout; do not add an insecure fallback to order-ID-only capture.
+- No PayPal sandbox/live calls, production database writes, deployments, secret changes or infrastructure changes were performed in this implementation pass.
+- The PR must remain Draft until CI, route tests, disposable-PostgreSQL concurrency tests, migration review and the deployment compatibility plan are all verified.
