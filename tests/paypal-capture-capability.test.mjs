@@ -154,7 +154,6 @@ test("capture POST accepts only an exact same-origin Origin header", () => {
   assert.equal(isSameOriginPayPalCaptureRequest("null", "https://shop.example/api/capture"), false);
 });
 
-
 test("PayPal routes enforce the owner-or-capability contract and never return the raw capability", async () => {
   const createRoute = await readFile(new URL("../src/app/api/checkout/paypal/create-order/route.ts", import.meta.url), "utf8");
   const captureRoute = await readFile(new URL("../src/app/api/checkout/paypal/capture-order/route.ts", import.meta.url), "utf8");
@@ -172,4 +171,23 @@ test("PayPal routes enforce the owner-or-capability contract and never return th
   assert.ok(captureRoute.indexOf("authorizePayPalCapture(") < captureRoute.indexOf("capturePayPalOrder("));
   assert.match(captureRoute, /maxAge:\s*0/);
   assert.doesNotMatch(captureRoute, /capability\?:\s*unknown/);
+});
+
+test("capture route places Origin, checkout and authorization gates before external capture", async () => {
+  const route = await readFile(new URL("../src/app/api/checkout/paypal/capture-order/route.ts", import.meta.url), "utf8");
+  const originGate = route.indexOf("if (!isSameOriginPayPalCaptureRequest(");
+  const checkoutLookup = route.indexOf("prisma.checkout.findUnique(");
+  const authorization = route.indexOf("authorizePayPalCapture({");
+  const authorizationDenial = route.indexOf("if (!authorization.ok)");
+  const paidReplay = route.indexOf("if (checkout.status === \"PAID\")");
+  const pendingGate = route.indexOf("if (checkout.status !== \"PENDING\")");
+  const externalCapture = route.indexOf("capturePayPalOrder(orderId, checkout.id)");
+
+  assert.ok(originGate >= 0, "same-origin gate must exist");
+  assert.ok(checkoutLookup > originGate, "Origin must be checked before checkout lookup");
+  assert.ok(authorization > checkoutLookup, "checkout authorization must follow local checkout lookup");
+  assert.ok(authorizationDenial > authorization, "authorization denial must follow authorization result");
+  assert.ok(paidReplay > authorizationDenial, "paid replay must only be evaluated after authorization denial handling");
+  assert.ok(pendingGate > paidReplay, "pending-state gate must precede provider capture");
+  assert.ok(externalCapture > pendingGate, "provider capture must occur only after the route gates");
 });
