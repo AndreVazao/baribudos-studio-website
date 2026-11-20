@@ -24,7 +24,7 @@ export function authorizePayPalCapture(args: {
   capability: unknown;
   now?: Date;
 }):
-  | { ok: true; mode: "guest"; capabilityHash: string }
+  | { ok: true; mode: "guest"; capabilityHash: string; authorizedAt: Date }
   | { ok: true; mode: "authenticated" }
   | {
       ok: false;
