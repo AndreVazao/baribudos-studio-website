@@ -13,7 +13,7 @@ export function isValidStripePaidSession(session: { id?: unknown; mode?: unknown
   return Boolean(checkout.provider === "STRIPE" && checkout.providerRef === session.id && session.metadata?.checkoutId === checkout.id && session.mode === "payment" && session.payment_status === "paid" && session.amount_total === checkout.amountCents && String(session.currency || "").toUpperCase() === checkout.currency.toUpperCase());
 }
 
-export async function fulfillPaidCheckout(tx: Prisma.TransactionClient, args: { checkoutId: string; provider: "PAYPAL" | "STRIPE"; providerRef: string; captureCapabilityHash?: string }): Promise<{ ok: true; alreadyPaid: boolean } | { ok: false; reason: string }> {
+export async function fulfillPaidCheckout(tx: Prisma.TransactionClient, args: { checkoutId: string; provider: "PAYPAL" | "STRIPE"; providerRef: string; captureCapabilityHash?: string; captureCapabilityAuthorizedAt?: Date }): Promise<{ ok: true; alreadyPaid: boolean } | { ok: false; reason: string }> {
   const checkout = await tx.checkout.findUnique({ where: { id: args.checkoutId }, include: { items: true } });
   if (!checkout || checkout.provider !== args.provider || checkout.providerRef !== args.providerRef) {
     return { ok: false, reason: "checkout_provider_reference_mismatch" };
@@ -35,18 +35,20 @@ export async function fulfillPaidCheckout(tx: Prisma.TransactionClient, args: { 
     return { ok: false, reason: "checkout_not_payable" };
   }
 
-  const now = new Date();
+  const authorizedAt = args.captureCapabilityAuthorizedAt;
   if (isGuestCapabilityCheckout) {
     if (
       !args.captureCapabilityHash
       || args.captureCapabilityHash !== checkout.captureCapabilityHash
+      || !authorizedAt
+      || !Number.isFinite(authorizedAt.getTime())
       || !checkout.captureCapabilityExpiresAt
-      || checkout.captureCapabilityExpiresAt <= now
+      || checkout.captureCapabilityExpiresAt <= authorizedAt
       || checkout.captureCapabilityConsumedAt
     ) {
       return { ok: false, reason: "capture_capability_invalid" };
     }
-  } else if (args.captureCapabilityHash) {
+  } else if (args.captureCapabilityHash || args.captureCapabilityAuthorizedAt) {
     return { ok: false, reason: "unexpected_capture_capability" };
   }
 
@@ -61,7 +63,7 @@ export async function fulfillPaidCheckout(tx: Prisma.TransactionClient, args: { 
       ...(isGuestCapabilityCheckout
         ? {
             captureCapabilityHash: args.captureCapabilityHash,
-            captureCapabilityExpiresAt: { gt: now },
+            captureCapabilityExpiresAt: { gt: authorizedAt },
             captureCapabilityConsumedAt: null,
           }
         : { captureCapabilityHash: null }),
