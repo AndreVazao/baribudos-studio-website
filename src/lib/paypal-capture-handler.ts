@@ -5,7 +5,9 @@ export type PayPalCaptureCheckout = {
   userId: string;
   amountCents: number;
   currency: string;
-  [key: string]: unknown;
+  captureCapabilityHash: string | null;
+  captureCapabilityExpiresAt: Date | null;
+  captureCapabilityConsumedAt: Date | null;
 };
 
 export type PayPalCaptureAuthorization =
