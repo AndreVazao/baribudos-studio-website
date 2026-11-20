@@ -20,22 +20,8 @@ export async function fulfillPaidCheckout(tx: Prisma.TransactionClient, args: { 
   }
 
   const isGuestCapabilityCheckout = Boolean(checkout.captureCapabilityHash);
-
-  if (checkout.status === "PAID") {
-    if (isGuestCapabilityCheckout && args.captureCapabilityHash !== checkout.captureCapabilityHash) {
-      return { ok: false, reason: "capture_capability_invalid" };
-    }
-    if (!isGuestCapabilityCheckout && args.captureCapabilityHash) {
-      return { ok: false, reason: "unexpected_capture_capability" };
-    }
-    return { ok: true, alreadyPaid: true };
-  }
-
-  if (checkout.status !== "PENDING") {
-    return { ok: false, reason: "checkout_not_payable" };
-  }
-
   const authorizedAt = args.captureCapabilityAuthorizedAt;
+
   if (isGuestCapabilityCheckout) {
     if (
       !args.captureCapabilityHash
@@ -44,12 +30,23 @@ export async function fulfillPaidCheckout(tx: Prisma.TransactionClient, args: { 
       || !Number.isFinite(authorizedAt.getTime())
       || !checkout.captureCapabilityExpiresAt
       || checkout.captureCapabilityExpiresAt <= authorizedAt
-      || checkout.captureCapabilityConsumedAt
     ) {
       return { ok: false, reason: "capture_capability_invalid" };
     }
-  } else if (args.captureCapabilityHash || args.captureCapabilityAuthorizedAt) {
+  } else if (args.captureCapabilityHash || authorizedAt) {
     return { ok: false, reason: "unexpected_capture_capability" };
+  }
+
+  if (checkout.status === "PAID") {
+    return { ok: true, alreadyPaid: true };
+  }
+
+  if (checkout.status !== "PENDING") {
+    return { ok: false, reason: "checkout_not_payable" };
+  }
+
+  if (isGuestCapabilityCheckout && checkout.captureCapabilityConsumedAt) {
+    return { ok: false, reason: "capture_capability_invalid" };
   }
 
   // The conditional update is the one-time gate: status, capability hash,
