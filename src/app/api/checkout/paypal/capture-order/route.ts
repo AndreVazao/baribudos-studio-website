@@ -131,7 +131,10 @@ export async function POST(request: Request) {
       provider: "PAYPAL",
       providerRef: orderId,
       ...(authorization.mode === "guest"
-        ? { captureCapabilityHash: authorization.capabilityHash }
+        ? {
+            captureCapabilityHash: authorization.capabilityHash,
+            captureCapabilityAuthorizedAt: authorization.authorizedAt,
+          }
         : {}),
     }));
 
