@@ -159,21 +159,21 @@ test("PayPal routes enforce the owner-or-capability contract and never return th
   const captureRoute = await readFile(new URL("../src/app/api/checkout/paypal/capture-order/route.ts", import.meta.url), "utf8");
   const captureHandler = await readFile(new URL("../src/lib/paypal-capture-handler.ts", import.meta.url), "utf8");
 
-  assert.match(createRoute, /captureCapabilityHash:\\s*guestCapability\\.tokenHash/);
-  assert.match(createRoute, /httpOnly:\\s*true/);
-  assert.match(createRoute, /secure:\\s*process\\.env\\.NODE_ENV\\s*===\\s*"production"/);
-  assert.match(createRoute, /path:\\s*PAYPAL_CAPTURE_COOKIE_PATH/);
-  assert.doesNotMatch(createRoute, /token:\\s*guestCapability\\.token/);
+  assert.ok(createRoute.includes("captureCapabilityHash: guestCapability.tokenHash"));
+  assert.ok(createRoute.includes("httpOnly: true"));
+  assert.ok(createRoute.includes('secure: process.env.NODE_ENV === "production"'));
+  assert.ok(createRoute.includes("path: PAYPAL_CAPTURE_COOKIE_PATH"));
+  assert.equal(createRoute.includes("token: guestCapability.token"), false);
 
-  assert.match(captureRoute, /handlePayPalCaptureRequest\\(/);
-  assert.match(captureRoute, /getCurrentUser/);
-  assert.match(captureRoute, /authorizePayPalCapture/);
-  assert.match(captureRoute, /cookieStore\\.get\\(getPayPalCaptureCookieName\\(orderId\\)\\)/);
-  assert.match(captureHandler, /dependencies\\.isSameOrigin\\(/);
-  assert.match(captureHandler, /dependencies\\.authorize\\(/);
-  assert.match(captureHandler, /dependencies\\.capturePayPalOrder\\(/);
-  assert.match(captureRoute, /maxAge:\\s*0/);
-  assert.doesNotMatch(captureRoute, /capability\\?:\\s*unknown/);
+  assert.ok(captureRoute.includes("handlePayPalCaptureRequest("));
+  assert.ok(captureRoute.includes("getCurrentUser"));
+  assert.ok(captureRoute.includes("authorizePayPalCapture"));
+  assert.ok(captureRoute.includes("cookieStore.get(getPayPalCaptureCookieName(orderId))"));
+  assert.ok(captureHandler.includes("dependencies.isSameOrigin("));
+  assert.ok(captureHandler.includes("dependencies.authorize("));
+  assert.ok(captureHandler.includes("dependencies.capturePayPalOrder("));
+  assert.ok(captureRoute.includes("maxAge: 0"));
+  assert.equal(captureRoute.includes("capability?: unknown"), false);
 });
 
 test("capture handler places Origin, checkout and authorization gates before external capture", async () => {
