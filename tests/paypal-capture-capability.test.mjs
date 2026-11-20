@@ -157,31 +157,35 @@ test("capture POST accepts only an exact same-origin Origin header", () => {
 test("PayPal routes enforce the owner-or-capability contract and never return the raw capability", async () => {
   const createRoute = await readFile(new URL("../src/app/api/checkout/paypal/create-order/route.ts", import.meta.url), "utf8");
   const captureRoute = await readFile(new URL("../src/app/api/checkout/paypal/capture-order/route.ts", import.meta.url), "utf8");
+  const captureHandler = await readFile(new URL("../src/lib/paypal-capture-handler.ts", import.meta.url), "utf8");
 
-  assert.match(createRoute, /captureCapabilityHash:\s*guestCapability\.tokenHash/);
-  assert.match(createRoute, /httpOnly:\s*true/);
-  assert.match(createRoute, /secure:\s*process\.env\.NODE_ENV\s*===\s*"production"/);
-  assert.match(createRoute, /path:\s*PAYPAL_CAPTURE_COOKIE_PATH/);
-  assert.doesNotMatch(createRoute, /token:\s*guestCapability\.token/);
+  assert.match(createRoute, /captureCapabilityHash:\\s*guestCapability\\.tokenHash/);
+  assert.match(createRoute, /httpOnly:\\s*true/);
+  assert.match(createRoute, /secure:\\s*process\\.env\\.NODE_ENV\\s*===\\s*"production"/);
+  assert.match(createRoute, /path:\\s*PAYPAL_CAPTURE_COOKIE_PATH/);
+  assert.doesNotMatch(createRoute, /token:\\s*guestCapability\\.token/);
 
-  assert.match(captureRoute, /isSameOriginPayPalCaptureRequest\(/);
-  assert.match(captureRoute, /getCurrentUser\(/);
-  assert.match(captureRoute, /authorizePayPalCapture\(/);
-  assert.match(captureRoute, /cookieStore\.get\(getPayPalCaptureCookieName\(orderId\)\)/);
-  assert.ok(captureRoute.indexOf("authorizePayPalCapture(") < captureRoute.indexOf("capturePayPalOrder("));
-  assert.match(captureRoute, /maxAge:\s*0/);
-  assert.doesNotMatch(captureRoute, /capability\?:\s*unknown/);
+  assert.match(captureRoute, /handlePayPalCaptureRequest\\(/);
+  assert.match(captureRoute, /getCurrentUser/);
+  assert.match(captureRoute, /authorizePayPalCapture/);
+  assert.match(captureRoute, /cookieStore\\.get\\(getPayPalCaptureCookieName\\(orderId\\)\\)/);
+  assert.match(captureHandler, /dependencies\\.isSameOrigin\\(/);
+  assert.match(captureHandler, /dependencies\\.authorize\\(/);
+  assert.match(captureHandler, /dependencies\\.capturePayPalOrder\\(/);
+  assert.match(captureRoute, /maxAge:\\s*0/);
+  assert.doesNotMatch(captureRoute, /capability\\?:\\s*unknown/);
 });
 
-test("capture route places Origin, checkout and authorization gates before external capture", async () => {
-  const route = await readFile(new URL("../src/app/api/checkout/paypal/capture-order/route.ts", import.meta.url), "utf8");
-  const originGate = route.indexOf("if (!isSameOriginPayPalCaptureRequest(");
-  const checkoutLookup = route.indexOf("prisma.checkout.findUnique(");
-  const authorization = route.indexOf("authorizePayPalCapture({");
-  const authorizationDenial = route.indexOf("if (!authorization.ok)");
-  const paidReplay = route.indexOf("if (checkout.status === \"PAID\")");
-  const pendingGate = route.indexOf("if (checkout.status !== \"PENDING\")");
-  const externalCapture = route.indexOf("capturePayPalOrder(orderId, checkout.id)");
+test("capture handler places Origin, checkout and authorization gates before external capture", async () => {
+  const handler = await readFile(new URL("../src/lib/paypal-capture-handler.ts", import.meta.url), "utf8");
+  const originGate = handler.indexOf("if (!dependencies.isSameOrigin(");
+  const checkoutLookup = handler.indexOf("dependencies.findCheckout(orderId)");
+  const authorization = handler.indexOf("dependencies.authorize({");
+  const authorizationDenial = handler.indexOf("if (!authorization.ok)");
+  const paidReplay = handler.indexOf("if (checkout.status === \\"PAID\\")");
+  const pendingGate = handler.indexOf("if (checkout.status !== \\"PENDING\\")");
+  const externalCapture = handler.indexOf("dependencies.capturePayPalOrder(orderId, checkout.id)");
+  const fulfillment = handler.indexOf("dependencies.fulfillPaidCheckout({");
 
   assert.ok(originGate >= 0, "same-origin gate must exist");
   assert.ok(checkoutLookup > originGate, "Origin must be checked before checkout lookup");
@@ -190,4 +194,5 @@ test("capture route places Origin, checkout and authorization gates before exter
   assert.ok(paidReplay > authorizationDenial, "paid replay must only be evaluated after authorization denial handling");
   assert.ok(pendingGate > paidReplay, "pending-state gate must precede provider capture");
   assert.ok(externalCapture > pendingGate, "provider capture must occur only after the route gates");
+  assert.ok(fulfillment > externalCapture, "local fulfillment must follow provider response validation");
 });
