@@ -182,8 +182,8 @@ test("capture handler places Origin, checkout and authorization gates before ext
   const checkoutLookup = handler.indexOf("dependencies.findCheckout(orderId)");
   const authorization = handler.indexOf("dependencies.authorize({");
   const authorizationDenial = handler.indexOf("if (!authorization.ok)");
-  const paidReplay = handler.indexOf("if (checkout.status === \\"PAID\\")");
-  const pendingGate = handler.indexOf("if (checkout.status !== \\"PENDING\\")");
+  const paidReplay = handler.indexOf('if (checkout.status === "PAID")');
+  const pendingGate = handler.indexOf('if (checkout.status !== "PENDING")');
   const externalCapture = handler.indexOf("dependencies.capturePayPalOrder(orderId, checkout.id)");
   const fulfillment = handler.indexOf("dependencies.fulfillPaidCheckout({");
 
