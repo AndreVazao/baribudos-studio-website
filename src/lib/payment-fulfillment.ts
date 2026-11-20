@@ -13,17 +13,85 @@ export function isValidStripePaidSession(session: { id?: unknown; mode?: unknown
   return Boolean(checkout.provider === "STRIPE" && checkout.providerRef === session.id && session.metadata?.checkoutId === checkout.id && session.mode === "payment" && session.payment_status === "paid" && session.amount_total === checkout.amountCents && String(session.currency || "").toUpperCase() === checkout.currency.toUpperCase());
 }
 
-export async function fulfillPaidCheckout(tx: Prisma.TransactionClient, args: { checkoutId: string; provider: "PAYPAL" | "STRIPE"; providerRef: string }): Promise<{ ok: true; alreadyPaid: boolean } | { ok: false; reason: string }> {
+export async function fulfillPaidCheckout(tx: Prisma.TransactionClient, args: { checkoutId: string; provider: "PAYPAL" | "STRIPE"; providerRef: string; captureCapabilityHash?: string }): Promise<{ ok: true; alreadyPaid: boolean } | { ok: false; reason: string }> {
   const checkout = await tx.checkout.findUnique({ where: { id: args.checkoutId }, include: { items: true } });
-  if (!checkout || checkout.provider !== args.provider || checkout.providerRef !== args.providerRef) return { ok: false, reason: "checkout_provider_reference_mismatch" };
-  if (checkout.status === "PAID") return { ok: true, alreadyPaid: true };
-  if (checkout.status !== "PENDING") return { ok: false, reason: "checkout_not_payable" };
-  const transition = await tx.checkout.updateMany({ where: { id: checkout.id, provider: args.provider, providerRef: args.providerRef, status: "PENDING" }, data: { status: "PAID" } });
-  if (transition.count === 0) {
-    const latest = await tx.checkout.findUnique({ where: { id: checkout.id } });
-    if (latest?.status === "PAID" && latest.provider === args.provider && latest.providerRef === args.providerRef) return { ok: true, alreadyPaid: true };
+  if (!checkout || checkout.provider !== args.provider || checkout.providerRef !== args.providerRef) {
+    return { ok: false, reason: "checkout_provider_reference_mismatch" };
+  }
+
+  const isGuestCapabilityCheckout = Boolean(checkout.captureCapabilityHash);
+
+  if (checkout.status === "PAID") {
+    if (isGuestCapabilityCheckout && args.captureCapabilityHash !== checkout.captureCapabilityHash) {
+      return { ok: false, reason: "capture_capability_invalid" };
+    }
+    if (!isGuestCapabilityCheckout && args.captureCapabilityHash) {
+      return { ok: false, reason: "unexpected_capture_capability" };
+    }
+    return { ok: true, alreadyPaid: true };
+  }
+
+  if (checkout.status !== "PENDING") {
     return { ok: false, reason: "checkout_not_payable" };
   }
-  for (const item of checkout.items) await tx.customerLibrary.upsert({ where: { userId_productId: { userId: checkout.userId, productId: item.productId } }, update: {}, create: { userId: checkout.userId, productId: item.productId } });
+
+  const now = new Date();
+  if (isGuestCapabilityCheckout) {
+    if (
+      !args.captureCapabilityHash
+      || args.captureCapabilityHash !== checkout.captureCapabilityHash
+      || !checkout.captureCapabilityExpiresAt
+      || checkout.captureCapabilityExpiresAt <= now
+      || checkout.captureCapabilityConsumedAt
+    ) {
+      return { ok: false, reason: "capture_capability_invalid" };
+    }
+  } else if (args.captureCapabilityHash) {
+    return { ok: false, reason: "unexpected_capture_capability" };
+  }
+
+  // The conditional update is the one-time gate: status, capability hash,
+  // expiry and consumption are checked and changed in a single SQL statement.
+  const transition = await tx.checkout.updateMany({
+    where: {
+      id: checkout.id,
+      provider: args.provider,
+      providerRef: args.providerRef,
+      status: "PENDING",
+      ...(isGuestCapabilityCheckout
+        ? {
+            captureCapabilityHash: args.captureCapabilityHash,
+            captureCapabilityExpiresAt: { gt: now },
+            captureCapabilityConsumedAt: null,
+          }
+        : { captureCapabilityHash: null }),
+    },
+    data: {
+      status: "PAID",
+      ...(isGuestCapabilityCheckout ? { captureCapabilityConsumedAt: now } : {}),
+    },
+  });
+
+  if (transition.count === 0) {
+    const latest = await tx.checkout.findUnique({ where: { id: checkout.id } });
+    if (
+      latest?.status === "PAID"
+      && latest.provider === args.provider
+      && latest.providerRef === args.providerRef
+      && (!isGuestCapabilityCheckout || latest.captureCapabilityHash === args.captureCapabilityHash)
+    ) {
+      return { ok: true, alreadyPaid: true };
+    }
+    return { ok: false, reason: "checkout_not_payable" };
+  }
+
+  for (const item of checkout.items) {
+    await tx.customerLibrary.upsert({
+      where: { userId_productId: { userId: checkout.userId, productId: item.productId } },
+      update: {},
+      create: { userId: checkout.userId, productId: item.productId },
+    });
+  }
+
   return { ok: true, alreadyPaid: false };
 }
