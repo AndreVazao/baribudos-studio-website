@@ -75,6 +75,22 @@ export async function createPayPalOrder(args: {
   return response.json()
 }
 
+export async function getPayPalOrder(orderId: string) {
+  const token = await getPayPalAccessToken()
+
+  const response = await fetch(`${getBaseUrl()}/v2/checkout/orders/${encodeURIComponent(orderId)}`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token.access_token}`,
+      "Content-Type": "application/json",
+    },
+    cache: "no-store",
+  })
+
+  if (!response.ok) throw new Error(await response.text())
+  return response.json()
+}
+
 export async function capturePayPalOrder(orderId: string, requestId?: string) {
   const token = await getPayPalAccessToken()
 
