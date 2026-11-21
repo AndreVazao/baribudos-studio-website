@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth-session";
-import { capturePayPalOrder } from "@/lib/paypal";
+import { capturePayPalOrder, getPayPalOrder } from "@/lib/paypal";
 import { isValidPayPalCapture, fulfillPaidCheckout } from "@/lib/payment-fulfillment";
 import {
   authorizePayPalCapture,
