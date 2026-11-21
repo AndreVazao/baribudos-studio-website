@@ -75,9 +75,10 @@ Keep PR #47 Draft. The capability/owner binding is a meaningful improvement, but
 
 ## Follow-up verification — 21 Nov 2026
 
-Added `tests/paypal-capture-provider-idempotency.test.mjs`:
+Added and extended `tests/paypal-capture-provider-idempotency.test.mjs`:
 - Exercises the actual `capturePayPalOrder()` wrapper with mocked Fetch and verifies that the local checkout ID is sent in the `PayPal-Request-Id` header.
+- Exercises the actual `getPayPalOrder()` wrapper and verifies the authenticated GET to `/v2/checkout/orders/{id}` uses `cache: no-store`.
 - Runs two concurrent handler calls against a simulated idempotent provider and verifies both use the same checkout-derived request key while the simulated fulfillment grants one entitlement.
-- Simulates a timeout after the provider has accepted a capture, then retries with the same request key and verifies the completed result can be reconciled into one local fulfillment.
+- Simulates a timeout after the provider accepts capture, then retries; the second request reads provider status `COMPLETED`, skips a second capture call and performs one local fulfillment.
 
-**Limit:** these are deterministic unit simulations, not a live PayPal/Sandbox test. They prove the application sends a stable request key; they do not prove provider retention or network behavior. The current handler still permits simultaneous provider requests, relies on PayPal's request-idempotency contract during its retention window, and has no bounded lookup/reconciliation flow for an unknown provider outcome. The Next.js cookie adapter, production migration baseline, legacy guest-checkout compatibility and persisted session revocation remain rollout blockers.
+**Limit:** these are deterministic unit simulations, not a live PayPal/Sandbox test. They do not prove provider retention or network behavior. Two simultaneous requests can still both observe `APPROVED` and call capture with the same request ID; local fulfillment is atomic, but there is no durable provider-call reservation. The Next.js cookie adapter, production migration baseline, legacy guest-checkout compatibility and persisted session revocation remain rollout blockers.
