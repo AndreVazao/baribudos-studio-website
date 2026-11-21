@@ -171,7 +171,7 @@ test("PayPal routes enforce the owner-or-capability contract and never return th
   assert.ok(captureRoute.includes("cookieStore.get(getPayPalCaptureCookieName(orderId))"));
   assert.ok(captureHandler.includes("dependencies.isSameOrigin("));
   assert.ok(captureHandler.includes("dependencies.authorize("));
-  assert.ok(captureHandler.includes("dependencies.capturePayPalOrder("));
+  assert.ok(captureHandler.includes("capturePayPalOrderSingleFlight(orderId, checkout.id, dependencies.capturePayPalOrder)"));
   assert.ok(captureRoute.includes("maxAge: 0"));
   assert.equal(captureRoute.includes("capability?: unknown"), false);
 });
@@ -184,7 +184,9 @@ test("capture handler places Origin, checkout and authorization gates before ext
   const authorizationDenial = handler.indexOf("if (!authorization.ok)");
   const paidReplay = handler.indexOf('if (checkout.status === "PAID")');
   const pendingGate = handler.indexOf('if (checkout.status !== "PENDING")');
-  const externalCapture = handler.indexOf("dependencies.capturePayPalOrder(orderId, checkout.id)");
+  const providerStateLookup = handler.indexOf("dependencies.getPayPalOrder(orderId)");
+  const externalCapture = handler.indexOf("capturePayPalOrderSingleFlight(orderId, checkout.id, dependencies.capturePayPalOrder)");
+  const captureValidation = handler.indexOf("dependencies.isValidCapture(capture,");
   const fulfillment = handler.indexOf("dependencies.fulfillPaidCheckout({");
 
   assert.ok(originGate >= 0, "same-origin gate must exist");
@@ -193,6 +195,8 @@ test("capture handler places Origin, checkout and authorization gates before ext
   assert.ok(authorizationDenial > authorization, "authorization denial must follow authorization result");
   assert.ok(paidReplay > authorizationDenial, "paid replay must only be evaluated after authorization denial handling");
   assert.ok(pendingGate > paidReplay, "pending-state gate must precede provider capture");
-  assert.ok(externalCapture > pendingGate, "provider capture must occur only after the route gates");
-  assert.ok(fulfillment > externalCapture, "local fulfillment must follow provider response validation");
+  assert.ok(providerStateLookup > pendingGate, "provider state must be read after the route gates");
+  assert.ok(externalCapture > providerStateLookup, "provider capture must follow provider state lookup");
+  assert.ok(captureValidation > externalCapture, "capture validation must follow provider capture");
+  assert.ok(fulfillment > captureValidation, "local fulfillment must follow provider response validation");
 });
