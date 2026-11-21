@@ -62,3 +62,13 @@ Official references to re-check against the exact PayPal Orders v2 API contract 
 ## Review disposition
 
 Keep PR #47 Draft. The capability/owner binding is a meaningful improvement, but it is not rollout-ready until route-level authorization tests, provider concurrency/unknown-outcome reconciliation, the migration baseline and legacy pending guest-checkout handling are resolved. Website JWT session revocation remains a separate security dependency.
+
+
+## Follow-up verification — 21 Nov 2026
+
+Added `tests/paypal-capture-provider-idempotency.test.mjs`:
+- Exercises the actual `capturePayPalOrder()` wrapper with mocked Fetch and verifies that the local checkout ID is sent in the `PayPal-Request-Id` header.
+- Runs two concurrent handler calls against a simulated idempotent provider and verifies both use the same checkout-derived request key while the simulated fulfillment grants one entitlement.
+- Simulates a timeout after the provider has accepted a capture, then retries with the same request key and verifies the completed result can be reconciled into one local fulfillment.
+
+**Limit:** these are deterministic unit simulations, not a live PayPal/Sandbox test. They prove the application sends a stable request key; they do not prove provider retention or network behavior. The current handler still permits simultaneous provider requests, relies on PayPal's request-idempotency contract during its retention window, and has no bounded lookup/reconciliation flow for an unknown provider outcome. The Next.js cookie adapter, production migration baseline, legacy guest-checkout compatibility and persisted session revocation remain rollout blockers.
