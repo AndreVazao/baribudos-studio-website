@@ -298,3 +298,28 @@ test("fulfillment conflicts do not return a successful capture response", async 
   assert.equal(result.status, 409);
   assert.deepEqual(result.body, { error: "checkout_not_pending" });
 });
+
+test("concurrent same-instance requests share one PayPal capture call", async () => {
+  let captureCalls = 0;
+  let releaseCapture;
+  const captureGate = new Promise((resolve) => { releaseCapture = resolve; });
+  const { dependencies, calls } = makeDependencies({
+    getPayPalOrder: async (orderId) => ({ id: orderId, status: "APPROVED" }),
+    capturePayPalOrder: async (orderId, checkoutId) => {
+      captureCalls += 1;
+      calls.push(["capturePayPalOrder", orderId, checkoutId]);
+      await captureGate;
+      return { id: orderId, status: "COMPLETED" };
+    },
+  });
+
+  const first = handlePayPalCaptureRequest(makeRequest({ orderId: "ORDER-CONCURRENT" }), dependencies);
+  const second = handlePayPalCaptureRequest(makeRequest({ orderId: "ORDER-CONCURRENT" }), dependencies);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(captureCalls, 1);
+  releaseCapture();
+  const results = await Promise.all([first, second]);
+  assert.deepEqual(results.map((result) => result.status), [200, 200]);
+  assert.equal(captureCalls, 1);
+  assert.equal(calls.filter(([name]) => name === "fulfillPaidCheckout").length, 2);
+});
