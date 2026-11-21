@@ -146,7 +146,23 @@ export async function handlePayPalCaptureRequest(
       return failure(409, "Checkout não está disponível para pagamento.");
     }
 
-    const capture = await dependencies.capturePayPalOrder(orderId, checkout.id);
+    // A previous capture request may have succeeded at PayPal while its HTTP
+    // response was lost. Read the provider's durable order state before deciding
+    // whether another capture call is appropriate.
+    const providerOrder = await dependencies.getPayPalOrder(orderId);
+    const providerStatus = providerOrder && typeof providerOrder === "object"
+      ? (providerOrder as { status?: unknown }).status
+      : undefined;
+
+    let capture: unknown;
+    if (providerStatus === "COMPLETED") {
+      capture = providerOrder;
+    } else if (providerStatus === "APPROVED") {
+      capture = await dependencies.capturePayPalOrder(orderId, checkout.id);
+    } else {
+      return failure(409, "O pedido PayPal ainda não está aprovado para captura.");
+    }
+
     if (!dependencies.isValidCapture(capture, {
       orderId,
       checkoutId: checkout.id,
