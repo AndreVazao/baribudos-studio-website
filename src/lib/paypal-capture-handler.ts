@@ -38,6 +38,7 @@ export type PayPalCaptureHandlerDependencies = {
     currentUserId: string | null;
     capability: string | null;
   }) => PayPalCaptureAuthorization;
+  getPayPalOrder: (orderId: string) => Promise<unknown>;
   capturePayPalOrder: (orderId: string, checkoutId: string) => Promise<unknown>;
   isValidCapture: (
     capture: unknown,
