@@ -43,6 +43,10 @@ function makeDependencies(overrides = {}) {
     getCurrentUser: async () => ({ id: "checkout-owner" }),
     getCapability: async () => null,
     authorize: () => ({ ok: true, mode: "authenticated" }),
+    getPayPalOrder: async (orderId) => {
+      calls.push(["getPayPalOrder", orderId]);
+      return { id: orderId, status: "APPROVED" };
+    },
     capturePayPalOrder: async (orderId, checkoutId) => {
       calls.push(["capturePayPalOrder", orderId, checkoutId]);
       return { id: orderId, status: "COMPLETED" };
@@ -220,6 +224,42 @@ test("guest path passes the verified capability context into atomic fulfillment"
       captureCapabilityAuthorizedAt: authorizedAt,
     }],
   ]);
+});
+
+test("completed provider order is reconciled without a second capture request", async () => {
+  const { dependencies, calls } = makeDependencies({
+    getPayPalOrder: async (orderId) => ({
+      id: orderId,
+      status: "COMPLETED",
+      purchase_units: [{
+        custom_id: "checkout-1",
+        payments: {
+          captures: [{
+            status: "COMPLETED",
+            amount: { currency_code: "EUR", value: "12.90" },
+          }],
+        },
+      }],
+    }),
+  });
+
+  const result = await handlePayPalCaptureRequest(makeRequest({ orderId: "ORDER-1" }), dependencies);
+
+  assert.equal(result.status, 200);
+  assert.equal(calls.some(([name]) => name === "capturePayPalOrder"), false);
+  assert.equal(calls.some(([name]) => name === "fulfillPaidCheckout"), true);
+});
+
+test("provider order that is not approved or completed is never captured", async () => {
+  const { dependencies, calls } = makeDependencies({
+    getPayPalOrder: async () => ({ id: "ORDER-1", status: "CREATED" }),
+  });
+
+  const result = await handlePayPalCaptureRequest(makeRequest({ orderId: "ORDER-1" }), dependencies);
+
+  assert.equal(result.status, 409);
+  assert.equal(calls.some(([name]) => name === "capturePayPalOrder"), false);
+  assert.equal(calls.some(([name]) => name === "fulfillPaidCheckout"), false);
 });
 
 test("invalid provider capture never grants a library entitlement", async () => {
