@@ -63,6 +63,32 @@ export type PayPalCaptureHandlerResult = {
   orderId?: string;
 };
 
+
+// Process-local single-flight guard: concurrent requests in the same server
+// instance share one provider capture promise. PayPal-Request-Id remains the
+// cross-instance idempotency mechanism; this map is intentionally not presented
+// as a distributed lock.
+const activeCaptures = new Map<string, Promise<unknown>>();
+
+async function capturePayPalOrderSingleFlight(
+  orderId: string,
+  checkoutId: string,
+  capturePayPalOrder: (orderId: string, checkoutId: string) => Promise<unknown>,
+): Promise<unknown> {
+  const existing = activeCaptures.get(orderId);
+  if (existing) return existing;
+
+  const capturePromise = capturePayPalOrder(orderId, checkoutId);
+  activeCaptures.set(orderId, capturePromise);
+  try {
+    return await capturePromise;
+  } finally {
+    if (activeCaptures.get(orderId) === capturePromise) {
+      activeCaptures.delete(orderId);
+    }
+  }
+}
+
 function failure(status: number, error: string): PayPalCaptureHandlerResult {
   return { status, body: { error } };
 }
@@ -158,7 +184,7 @@ export async function handlePayPalCaptureRequest(
     if (providerStatus === "COMPLETED") {
       capture = providerOrder;
     } else if (providerStatus === "APPROVED") {
-      capture = await dependencies.capturePayPalOrder(orderId, checkout.id);
+      capture = await capturePayPalOrderSingleFlight(orderId, checkout.id, dependencies.capturePayPalOrder);
     } else {
       return failure(409, "O pedido PayPal ainda não está aprovado para captura.");
     }
