@@ -26,6 +26,7 @@ export async function POST(request: Request) {
       return cookieStore.get(getPayPalCaptureCookieName(orderId))?.value ?? null;
     },
     authorize: authorizePayPalCapture,
+    getPayPalOrder,
     capturePayPalOrder,
     isValidCapture: (capture, expected) => isValidPayPalCapture(
       capture as Parameters<typeof isValidPayPalCapture>[0],
