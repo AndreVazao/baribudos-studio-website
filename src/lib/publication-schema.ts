@@ -1,5 +1,10 @@
 import { z } from "zod";
 import { hasAtMostTwoDecimalPlaces, MAX_PRICE_MINOR_UNITS } from "@/lib/publication-price";
+import { isPublicHttpsAssetUrl } from "@/lib/publication-asset-url.mjs";
+
+const publicAssetUrlSchema = z.string().url().refine(isPublicHttpsAssetUrl, {
+  message: "asset_url_must_be_public_https_url",
+});
 
 export const websitePayloadSchema = z.object({
   project_id: z.string(),
@@ -23,20 +28,20 @@ export const websitePayloadSchema = z.object({
   assets: z.object({
     // Studio currently sends an empty string when no cover is selected.
     // Normalize that sentinel to an absent asset while still rejecting relative/local paths.
-    cover: z.preprocess((value) => value === "" ? undefined : value, z.string().url().optional()),
-    logos: z.array(z.string().url()).optional().default([]),
-    gallery: z.array(z.string().url()).optional().default([]),
-    sample_pages: z.array(z.string().url()).optional().default([]),
-    audiobook_preview: z.string().url().optional().nullable(),
-    video_trailer: z.string().url().optional().nullable(),
-    downloadable_files: z.array(z.string().url()).optional().default([]),
+    cover: z.preprocess((value) => value === "" ? undefined : value, publicAssetUrlSchema.optional()),
+    logos: z.array(publicAssetUrlSchema).optional().default([]),
+    gallery: z.array(publicAssetUrlSchema).optional().default([]),
+    sample_pages: z.array(publicAssetUrlSchema).optional().default([]),
+    audiobook_preview: publicAssetUrlSchema.optional().nullable(),
+    video_trailer: publicAssetUrlSchema.optional().nullable(),
+    downloadable_files: z.array(publicAssetUrlSchema).optional().default([]),
   }),
   seo: z.object({
     title: z.string(),
     description: z.string(),
     keywords: z.array(z.string()).default([]),
     canonical_url: z.string().url().optional().or(z.literal("")),
-    og_image: z.string().url().optional().or(z.literal("")),
+    og_image: publicAssetUrlSchema.optional().or(z.literal("")),
   }),
   characters: z.array(z.string()).optional().default([]),
   themes: z.array(z.string()).optional().default([]),

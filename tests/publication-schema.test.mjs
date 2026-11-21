@@ -15,13 +15,14 @@ const compile = (source) => ts.transpileModule(source, {
 }).outputText;
 
 const priceSource = await readFile(new URL("../src/lib/publication-price.ts", import.meta.url), "utf8");
+const assetUrlSource = await readFile(new URL("../src/lib/publication-asset-url.mjs", import.meta.url), "utf8");
 const schemaSource = await readFile(new URL("../src/lib/publication-schema.ts", import.meta.url), "utf8");
 
 await writeFile(join(temporaryDirectory, "publication-price.mjs"), compile(priceSource));
-const compiledSchema = compile(schemaSource).replaceAll(
-  '"@/lib/publication-price"',
-  '"./publication-price.mjs"',
-);
+await writeFile(join(temporaryDirectory, "publication-asset-url.mjs"), assetUrlSource);
+const compiledSchema = compile(schemaSource)
+  .replaceAll('"@/lib/publication-price"', '"./publication-price.mjs"')
+  .replaceAll('"@/lib/publication-asset-url.mjs"', '"./publication-asset-url.mjs"');
 await writeFile(join(temporaryDirectory, "publication-schema.mjs"), compiledSchema);
 
 const { websitePayloadSchema } = await import(
@@ -73,11 +74,25 @@ test("continues to reject relative Studio storage paths as public URLs", () => {
   assert.equal(result.success, false);
 });
 
+test("rejects local, private and non-HTTPS cover URLs", () => {
+  for (const cover of [
+    "https://localhost/cover.png",
+    "https://studio.local/cover.png",
+    "https://192.168.1.8/cover.png",
+    "https://[::1]/cover.png",
+    "http://assets.example.com/cover.png",
+    "https://user:secret@assets.example.com/cover.png",
+  ]) {
+    const result = websitePayloadSchema.safeParse(payloadWithCover(cover));
+    assert.equal(result.success, false, cover);
+  }
+});
+
 test("preserves valid absolute cover URLs", () => {
-  const result = websitePayloadSchema.safeParse(payloadWithCover("https://assets.example/cover.png"));
+  const result = websitePayloadSchema.safeParse(payloadWithCover("https://assets.example.com/cover.png"));
 
   assert.equal(result.success, true, JSON.stringify(result.error?.issues ?? []));
   if (result.success) {
-    assert.equal(result.data.assets.cover, "https://assets.example/cover.png");
+    assert.equal(result.data.assets.cover, "https://assets.example.com/cover.png");
   }
 });
