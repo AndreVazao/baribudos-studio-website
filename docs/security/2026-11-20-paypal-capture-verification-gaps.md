@@ -32,17 +32,26 @@ Therefore the precise claim is **signed Website JWT verification plus active-use
 
 Before rollout, add route-level tests proving that missing/invalid Origin, missing guest capability, wrong authenticated owner, expired/consumed capability and non-payable checkout all return before the provider function is called. Include a valid guest path and a valid owner path using a mocked provider.
 
-## Provider concurrency and unknown outcomes — unresolved
+## Provider concurrency and unknown outcomes — bounded lookup added, reservation still unresolved
 
-The current route calls `capturePayPalOrder(orderId, checkout.id)` **before** the local conditional PENDING-to-PAID transaction. The transaction protects local fulfillment and entitlement idempotency, but it is not a reservation that prevents two simultaneous requests from reaching PayPal.
+The handler now performs one authenticated PayPal Orders v2 **Show order details** request for each authorized pending-checkout attempt:
 
-The stable local checkout ID is passed as `PayPal-Request-Id`, which is useful for provider retries. Provider idempotency retention is finite and API-specific; the Orders v2 capture reference documents a default six-hour retention period. This must not be treated as a permanent exactly-once guarantee.
+- If the provider order is `COMPLETED`, the returned order object is validated against the local order ID, checkout custom ID, exact amount and currency, then passed to the existing local fulfillment transaction. No second capture request is issued.
+- If the provider order is `APPROVED`, the handler sends the capture request with the local checkout ID as `PayPal-Request-Id`.
+- Any other provider status is rejected without a capture call or entitlement write.
+- Provider lookup errors fail closed; the handler does not guess that capture is safe.
+
+This is a bounded, request-driven reconciliation path, not a polling loop or webhook consumer. PayPal documents the Show order details endpoint as returning the order status and capture details; a completed order has status `COMPLETED` and a completed capture in `purchase_units[].payments.captures[]`. See the official [Orders v2 Show order details endpoint](https://developer.paypal.com/sdk/orders/v2/orders-get/) and [Orders API integration guide](https://developer.paypal.com/api/rest/integration/orders-api).
+
+The stable local checkout ID is still passed as `PayPal-Request-Id` for the APPROVED→capture path. Provider idempotency retention is finite and API-specific; the Orders v2 reference documents a default six-hour retention period. This must not be treated as a permanent exactly-once guarantee.
+
+**Still unresolved:** two simultaneous requests can both read `APPROVED` before either capture completes. Both may reach PayPal with the same request ID. The local conditional transaction protects entitlement fulfillment, but it is not a durable provider-call reservation or a distributed lock. The deterministic concurrent test models provider idempotency; it does not prove PayPal's live concurrency semantics.
 
 Required before rollout:
 
-1. Add a route/provider concurrency test that starts two capture requests for the same checkout and asserts both use exactly the same provider request ID.
-2. Test timeout-after-provider-success and retry after an unknown response.
-3. Define a bounded reconciliation path that checks provider state before granting an entitlement or issuing another capture attempt.
+1. Keep the concurrent capture test and exact stable request-key assertion.
+2. Keep the timeout-after-provider-success test proving a subsequent request reads `COMPLETED` and skips another capture call.
+3. Consider a durable local capture-attempt reservation only after the production migration baseline is reconciled; do not introduce an unreviewed production schema change.
 4. Do not mark a checkout FAILED merely because the HTTP response was lost after provider success.
 5. Do not introduce an order-ID-only fallback for older guest checkouts that have no capability.
 
