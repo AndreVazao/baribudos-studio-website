@@ -194,9 +194,8 @@ test("concurrent capture requests reuse the same provider idempotency key", asyn
 
   assert.equal(first.status, 200);
   assert.equal(second.status, 200);
-  assert.equal(providerRequests.length, 2);
+  assert.equal(providerRequests.length, 1, "same-process single-flight should invoke provider capture once");
   assert.deepEqual(providerRequests, [
-    { orderId: "PAYPAL-ORDER-42", requestId: "checkout-42" },
     { orderId: "PAYPAL-ORDER-42", requestId: "checkout-42" },
   ]);
   assert.equal(providerCaptures.size, 1);
