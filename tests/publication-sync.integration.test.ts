@@ -45,9 +45,9 @@ function makeInput(options: {
       currency: "EUR",
       channel: "website",
       assets: {
-        cover: options.cover ?? "https://assets.example.test/cover.png",
+        cover: options.cover ?? "https://assets.example.com/cover.png",
         logos: [],
-        gallery: options.gallery ?? ["https://assets.example.test/gallery-1.png"],
+        gallery: options.gallery ?? ["https://assets.example.com/gallery-1.png"],
         sample_pages: [],
         audiobook_preview: null,
         video_trailer: null,
@@ -143,13 +143,13 @@ test("PostgreSQL ingestion replay replaces assets and keeps one stable product",
 });
 
 test("PostgreSQL transaction rolls back publication, variant and product after asset failure", async () => {
-  const input = makeInput({ cover: "https://assets.example.test/force-failure.png" });
+  const input = makeInput({ cover: "https://assets.example.com/force-failure.png" });
 
   await prisma.$executeRawUnsafe(`
     CREATE OR REPLACE FUNCTION baribudos_test_reject_asset()
     RETURNS trigger AS $$
     BEGIN
-      IF NEW."fileUrl" = 'https://assets.example.test/force-failure.png' THEN
+      IF NEW."fileUrl" = 'https://assets.example.com/force-failure.png' THEN
         RAISE EXCEPTION 'forced_asset_write_failure';
       END IF;
       RETURN NEW;
