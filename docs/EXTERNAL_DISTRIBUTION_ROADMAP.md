@@ -200,3 +200,76 @@ The public Website is reachable, but there is currently no commercial product/ca
 - Não iniciar submissões externas até a publicação Website estar autónoma, existir aprovação explícita do Studio por canal, direitos/licenças e termos comerciais estarem validados, e a auditoria/reconciliação ser operacional.
 
 Prioridade mantém-se: concluir materialização durável e checkout autónomo antes da distribuição multicanal.
+
+
+## 10. Operational recheck — 23 November 2026
+
+This section records fresh read-only evidence. It supersedes older operational observations only where explicitly stated; it does not authorize production, credential, billing, domain or infrastructure changes.
+
+### Vercel and public access
+
+- Project: `baribudos-studio-website`, linked to the active Website repository and using Next.js.
+- Production deployment: **READY** at main commit `fc0e05948afa3f0c392879daaa9a71fd0ce53ed7`.
+- Website PR #47 preview: **READY** at head `263b46d302d838d7621af4a4fdded1caba4cfbfc`.
+- SSO protection is enabled with `all_except_custom_domains`. The current domain listing contains the Vercel-managed `baribudos-studio-website.vercel.app` domain and no verified custom domain.
+- An anonymous fetch of `/loja` and `/api/catalog/home` could not be completed: the available public-web fetch did not return the page, and Browser Use reported insufficient credits. No HTTP 401/403 is claimed or inferred.
+- The Vercel environment inventory exposed variable names and metadata only. Several entries were flagged as `readable-secret`; no values were decrypted or read. Continue the coordinated visibility review in Website issue #37; do not rotate credentials without a coordinated plan.
+- GitHub reports branch protection disabled on Website `main`. No protection setting was changed.
+
+**Conclusion:** a READY deployment is confirmed, but anonymous public access is not. Do not treat deployment readiness as proof that the public storefront is reachable.
+
+### Supabase and commercial data
+
+- The connected Supabase project remains `ACTIVE_HEALTHY` on PostgreSQL 17.6.1.
+- The Security Advisor still reports `rls_disabled_in_public` as **ERROR / EXTERNAL / SECURITY** for `public.system_metadata`.
+- Read-only catalogue inspection confirms RLS and FORCE RLS disabled, zero policies, and SELECT/INSERT/UPDATE/DELETE privileges for both `anon` and `authenticated`. The table currently has zero rows; no row values were read.
+- Exact read-only counts: Product 0, Publication 0, PublicationVariant 0, PublicationAsset 0, BundleGroup 0, Checkout 0 and CustomerLibrary 0.
+- Supabase Storage: 0 buckets and 0 objects.
+
+No production DDL, grants, catalog writes or synthetic products were created. Keep issue #39 open until consumers and migration provenance are reconciled.
+
+### Asset persistence and Render
+
+- Website `PublicationAsset` still stores `fileUrl` references. `syncPublicationToCommerce()` persists URL references; it does not materialize asset bytes.
+- The active Website package does not declare an object-storage SDK/upload adapter.
+- No `render.yaml`, `Procfile`, `Dockerfile` or explicit Render service manifest was found in the active repository trees.
+- The connected toolset did not expose a Render account/service inspection capability. Render service type, disk, mount path, backups and retention remain **unknown**, not assumed absent.
+- Supabase Storage has no buckets or objects. The inspected Vercel metadata does not prove that a separate durable asset store exists or does not exist.
+
+**Conclusion:** Studio-offline asset autonomy remains unproven. Keep issue #30 open. Before marking any publication commercially available, materialize its cover, gallery, samples, EPUB, audio and video bytes into Website-controlled durable storage and verify MIME, byte length, SHA-256, retry/idempotency, protected downloads and offline delivery.
+
+### Publication ingest PR #26
+
+- PR #26 is **closed without merge**; its branch `fix/v6-atomic-publication-sync` remains preserved.
+- Compared with current `main`, the historical branch is 46 commits ahead and 4 behind; it must not be reopened/merged as-is.
+- The central checksum, version, price, sync, ingest-route and API-key-auth files were compared by blob SHA and are byte-identical on current `main`. The core ingest work is therefore already present; the remaining historical branch differences are not a reason for a redundant merge.
+- Continue with the actual residual gaps below rather than replaying the historical branch.
+
+### Payment capture PR #47
+
+- PR #47 remains Draft at head `263b46d302d838d7621af4a4fdded1caba4cfbfc`.
+- Website CI and Repository Visibility checks passed for that head; the Vercel preview is READY.
+- The current single-flight guard is process-local. It reduces duplicate capture calls within one process but is not a durable cross-instance reservation for serverless execution.
+- Provider request idempotency has a finite retention window and is not a permanent exactly-once guarantee.
+- Durable capture reservation, provider/database reconciliation, legacy guest-checkout coverage and end-to-end cookie/session validation remain rollout gates.
+
+### External distribution
+
+The channel roadmap above remains **discovery only**. No external channel is enabled and no publisher account, credential or submission was configured.
+
+- Ebooks: KDP, Apple Books, Google Play Books and Kobo remain subject to official portal/partner access and territory/format checks.
+- Audiobooks: Spotify for Authors and ACX/Audible require account, rights and exclusivity review.
+- YouTube: use YouTube Studio or an authorized YouTube Data API workflow only, with an explicit audience declaration and human review.
+- YouTube Kids has no direct publishing API assumed. A YouTube upload marked made-for-kids does not guarantee YouTube Kids inclusion.
+
+Studio remains the authority for editorial approval, metadata, price, rights, territory and per-channel release. External distribution remains downstream of a confirmed Website publication and must never make Website sales depend on the Studio being online.
+
+### Current no-go conditions and next sequence
+
+1. Do not claim public storefront access until an anonymous production test succeeds and the SSO/domain scope is resolved.
+2. Do not claim commercial sales autonomy while the production catalogue is empty and asset bytes are not durably materialized.
+3. Do not apply RLS/grants or migrations until the source of `system_metadata`, its consumers and migration baseline are reconciled.
+4. Do not create storage, Render disks, buckets, secrets, domains, subscriptions or paid resources without explicit approval.
+5. Continue in this order: close critical Studio authentication/RBAC inventory; resolve Website public access and Supabase RLS; prove asset autonomy; validate payment capture/reconciliation; then pilot one externally distributed title with explicit Studio approval.
+
+No production data, credentials, domains, protection settings, deployments, storage resources or billing settings were changed during this recheck.
