@@ -311,3 +311,20 @@ Before any adapter is implemented, each channel needs a validated account/rights
 ### Priority / no-go
 
 This discovery does not change the order of work: first verify anonymous public storefront access, durable Website-owned asset materialization, independent checkout/payment fulfillment and durable sales/event reconciliation. External channel distribution remains a later pilot after Website publication is autonomous and the Studio has approved each channel/territory/rights/price separately. No accounts, credentials, API projects, uploads, contracts, payments or infrastructure were changed.
+
+
+## 12. Supabase P0 containment — 24 November 2026
+
+**Production containment applied and verified.** The Supabase Security Advisor previously reported `rls_disabled_in_public` for `public.system_metadata`. Repository search found no active Website code reference to this table; it is not part of the active Prisma schema. The migration provenance gap is documented, but the user's explicit approval authorized the focused security containment.
+
+Applied migration `20261124175649_secure_system_metadata_rls_and_client_grants`:
+
+- `REVOKE ALL PRIVILEGES ON TABLE public.system_metadata FROM anon, authenticated`.
+- `ALTER TABLE public.system_metadata ENABLE ROW LEVEL SECURITY`.
+- No client policies were added: direct client access is default-deny.
+- Privileges for `service_role` and table owner `postgres` were preserved and verified.
+- No data values were read or modified.
+
+Post-change catalog verification: RLS enabled; FORCE RLS remains disabled; no policies; all seven table privileges are false for both `anon` and `authenticated`; service_role and postgres retain the listed table privileges. The Advisor no longer reports `rls_disabled_in_public`; it reports the expected INFO finding `rls_enabled_no_policy`.
+
+This is a targeted containment fix. The historical migration baseline and the table's origin/consumer provenance remain to be reconciled. Do not create a client policy without a proven use case and explicit review.
