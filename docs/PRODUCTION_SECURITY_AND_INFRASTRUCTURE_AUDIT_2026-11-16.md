@@ -212,3 +212,26 @@ No production database, deployment, domain, credential, storage or billing setti
 - Distribuição externa (ebooks, audiobooks e YouTube/YouTube Kids) continua fase posterior, com aprovação por canal no Studio e mecanismos oficiais; não presumir API direta de YouTube Kids.
 
 Nenhum DDL, write de catálogo, segredo, credencial, recurso pago, domínio ou setting de infraestrutura foi alterado nesta revalidação.
+
+
+## 12. Supabase P0 containment applied — 24 November 2026
+
+The owner explicitly authorized the focused production remediation after the current code/catalog review. Active Website code search found no reference to `system_metadata`; the table is absent from the active Prisma schema. The historical migration baseline is still incomplete, so no broader database cleanup was attempted.
+
+Migration applied in Supabase: `20261124175649_secure_system_metadata_rls_and_client_grants`.
+
+SQL applied:
+
+```sql
+REVOKE ALL PRIVILEGES ON TABLE public.system_metadata FROM anon, authenticated;
+ALTER TABLE public.system_metadata ENABLE ROW LEVEL SECURITY;
+```
+
+Post-change checks confirmed:
+- RLS enabled; FORCE RLS disabled; no client policies.
+- `anon` and `authenticated`: SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES and TRIGGER all denied by effective privilege checks.
+- `service_role` and owner `postgres`: existing table privileges retained.
+- Security Advisor: prior ERROR `rls_disabled_in_public` is gone. New `rls_enabled_no_policy` is INFO and expected for this private table.
+- No row values were read; no data was changed.
+
+This closes the immediate public-schema exposure for the table. It does not reconcile the full Supabase migration baseline or establish whether an undocumented external consumer exists; keep those follow-up checks tracked.
