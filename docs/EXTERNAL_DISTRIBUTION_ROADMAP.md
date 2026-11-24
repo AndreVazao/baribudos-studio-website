@@ -273,3 +273,41 @@ Studio remains the authority for editorial approval, metadata, price, rights, te
 5. Continue in this order: close critical Studio authentication/RBAC inventory; resolve Website public access and Supabase RLS; prove asset autonomy; validate payment capture/reconciliation; then pilot one externally distributed title with explicit Studio approval.
 
 No production data, credentials, domains, protection settings, deployments, storage resources or billing settings were changed during this recheck.
+
+
+## 11. Official channel workflow/API recheck — 24 November 2026
+
+This is a source-backed discovery snapshot, not permission to upload, create accounts, alter prices, grant rights, use aggregator exclusivity, or publish. The Studio remains the editorial/commercial authority. Channel submission is downstream of a confirmed autonomous Website publication; no Website sale or delivery may depend on Studio being online.
+
+### Ebooks — official portals and API boundary
+
+| Channel | Official workflow and formats | API status / integration approach |
+|---|---|---|
+| Amazon Kindle Direct Publishing (KDP) | Rights-holder Bookshelf → edit eBook content → upload manuscript and cover → preview/quality review → metadata, rights and pricing. Current formats include EPUB, DOCX and KPF; MOBI is no longer accepted for new/revised eBooks. | No public self-publishing upload API was found in the official documentation reviewed. Treat as human portal submission; store upload evidence/IDs and reconcile status manually. [Upload/preview](https://kdp.amazon.com/en_US/help/topic/G200641240), [formats](https://kdp.amazon.com/en_US/help/topic/GULSQMHU5MNH4EZM). |
+| Apple Books | iTunes Connect account; Publishing Portal uploads EPUB, cover and sample, runs file validation; metadata includes category, language and interest age (required for children's/teen books); rights, territories and price are configured in iTunes Connect. EPUBCheck is required by Apple's current submission guidance. | No public publisher upload API was surfaced in the official docs reviewed. Portal submission is the supported baseline; record book ID, submission/review status and receipts. [Portal workflow](https://authors.apple.com/support/4574-publish-book-from-web). |
+| Google Play Books | Partner Center uploads EPUB/PDF and cover/content files; bulk spreadsheet workflows require identifiers such as ISBN (non-ISBN titles must be entered individually); upload history provides processing/error evidence. | The public Google Books API documentation is for book discovery/library/volume operations, not a confirmed Partner Center publishing API. Use Partner Center/manual upload until publisher API access is explicitly confirmed. [Bulk upload](https://support.google.com/books/partner/answer/3289689), [spreadsheet workflow](https://support.google.com/books/partner/answer/3058975), [Books API](https://developers.google.com/books/docs/v1/using). |
+| Kobo Writing Life | Rights-holder portal supports self-published eBooks and audiobooks, metadata, pricing/promotions and sales reporting; direct publishing is recommended where the author wants control. Kobo states it is non-exclusive. | No public publishing API was found in the official docs reviewed. Portal submission is the baseline; preserve channel-specific price, territories, rights and receipt/status. [KWL](https://www.kobo.com/pt/pt/p/writinglife), [help](https://help.kobo.com/hc/en-us/articles/360017771754-What-is-Kobo-Writing-Life). |
+
+### Audiobooks — official portal, formats and rights
+
+| Channel | Official workflow | API/rights boundary |
+|---|---|---|
+| Spotify for Authors | Direct upload portal; MP3/WAV/FLAC, square PNG/JPEG cover (3000×3000 recommended), sample, chapter metadata and payment profile; processing and availability can take up to 3 business days. | No public upload API was surfaced. Direct portal is baseline. Optional referral distribution to Voices by INaudio is an account opt-in; digital-voice-narrated titles are not shared to that referral network. [Upload guide](https://support.spotify.com/st-en/authors/article/uploading-audiobooks/), [other platforms](https://support.spotify.com/jo-en/authors/article/getting-your-audiobook-on-other-listening-platforms/). |
+| ACX/Audible | Rights holder claims title and confirms audio rights; title must be eligible on Amazon; completed audio passes ACX QA before distribution. Contract/territory, narrator production agreement and royalty/exclusivity choice must be reviewed per title. | No public upload API was found. Direct ACX portal and rights-holder approval are baseline. ACX's official publisher guidance states aggregators are no longer eligible by year-end 2026; rights holders should contact Audible's content-partner team for agreements. Verify current model/terms before any submission. [ACX workflow](https://www.acx.com/mp/how-it-works/agents-and-publishers), [ACX](https://www.acx.com/). |
+
+### YouTube and YouTube Kids — strict separation
+
+- YouTube Data API v3 offers `videos.insert` with resumable upload, metadata, privacy/scheduling and processing-status checks. It requires OAuth, a channel owner and an upload project.
+- YouTube API Developer Policies require the special Upload Project for uploading one's own videos to one's own official channel; the project ID must start with `mfk110`. Uploads must originate from a **non-child-directed API client**. If a video is Made for Kids, the API audience field must be set to true.
+- A Child-Directed API Client must not perform write actions such as uploading videos. Baribudos Studio must therefore remain a private adult-operated editorial/admin tool; no upload action may be exposed to children or the public child-facing website.
+- Made-for-Kids classification is per content and must be reviewed/declared correctly. An upload or audience flag does **not** guarantee inclusion in the YouTube Kids app. No direct YouTube Kids publishing API is assumed; Kids availability/discovery is a separate platform decision and not a publication state we can control.
+
+Official sources: [Developer Policies](https://developers.google.com/youtube/terms/developer-policies/), [upload guide](https://developers.google.com/youtube/data/guides/uploading_a_video), [videos.insert](https://developers.google.com/youtube/data/reference/rest/v3/videos/insert), [audience settings](https://support.google.com/youtube/answer/9527654), [Made-for-Kids FAQ](https://support.google.com/youtube/answer/9684541).
+
+### Channel adapter contract (design only)
+
+Before any adapter is implemented, each channel needs a validated account/rights/territory/format/metadata/price/royalty/exclusivity checklist. A channel release record should bind the immutable Studio revision and content checksum to the exact output files, metadata, approved price/currency/territories, human approver, submission method, channel-specific IDs, timestamps, status and evidence/receipt. Proposed states: `not_eligible → ready_for_review → approved_for_channel → manual_submission_required | submitted → processing → published | rejected | withdrawn`; reconciliation is explicit and idempotent. No adapter may silently alter Studio price or metadata, auto-submit on Website publication, or assume that a public API exists.
+
+### Priority / no-go
+
+This discovery does not change the order of work: first verify anonymous public storefront access, durable Website-owned asset materialization, independent checkout/payment fulfillment and durable sales/event reconciliation. External channel distribution remains a later pilot after Website publication is autonomous and the Studio has approved each channel/territory/rights/price separately. No accounts, credentials, API projects, uploads, contracts, payments or infrastructure were changed.
