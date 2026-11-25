@@ -8,7 +8,6 @@ import {
   authorizePayPalCapture,
   getPayPalCaptureCookieName,
   isSameOriginPayPalCaptureRequest,
-  PAYPAL_CAPTURE_COOKIE_PATH,
 } from "@/lib/paypal-capture-capability.mjs";
 import { getExpiredPayPalCaptureCookieOptions } from "@/lib/paypal-capture-cookie.mjs";
 import { paymentErrorPayload } from "@/lib/payment-error.mjs";
