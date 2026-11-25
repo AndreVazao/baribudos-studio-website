@@ -10,6 +10,7 @@ import {
   isSameOriginPayPalCaptureRequest,
   PAYPAL_CAPTURE_COOKIE_PATH,
 } from "@/lib/paypal-capture-capability.mjs";
+import { getExpiredPayPalCaptureCookieOptions } from "@/lib/paypal-capture-cookie.mjs";
 import { paymentErrorPayload } from "@/lib/payment-error.mjs";
 import { handlePayPalCaptureRequest } from "@/lib/paypal-capture-handler";
 
@@ -40,14 +41,11 @@ export async function POST(request: Request) {
   const response = NextResponse.json(result.body, { status: result.status });
 
   if (result.clearGuestCapabilityCookie && result.orderId) {
-    response.cookies.set(getPayPalCaptureCookieName(result.orderId), "", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: PAYPAL_CAPTURE_COOKIE_PATH,
-      maxAge: 0,
-      expires: new Date(0),
-    });
+    response.cookies.set(
+      getPayPalCaptureCookieName(result.orderId),
+      "",
+      getExpiredPayPalCaptureCookieOptions(process.env.NODE_ENV === "production"),
+    );
   }
 
   return response;
