@@ -142,6 +142,35 @@ test("PostgreSQL ingestion replay replaces assets and keeps one stable product",
   assert.equal(assets[0].role, "COVER");
 });
 
+test("PostgreSQL enforces one commercial product per publication variant", async () => {
+  const input = makeInput();
+  const first = await syncPublicationToCommerce(input as never);
+
+  await assert.rejects(
+    prisma.product.create({
+      data: {
+        publicationVariantId: input.variant_id,
+        slug: `${first.product.slug}-duplicate-${randomUUID()}`,
+        title: "Duplicate product must be rejected",
+        type: "EBOOK",
+        priceCents: 990,
+        currency: "EUR",
+        active: false,
+      },
+    }),
+    (error: unknown) =>
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      (error as { code?: string }).code === "P2002",
+  );
+
+  assert.equal(
+    await prisma.product.count({ where: { publicationVariantId: input.variant_id } }),
+    1,
+  );
+});
+
 test("PostgreSQL transaction rolls back publication, variant and product after asset failure", async () => {
   const input = makeInput({ cover: "https://assets.example.com/force-failure.png" });
 
