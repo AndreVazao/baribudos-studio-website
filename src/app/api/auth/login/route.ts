@@ -27,6 +27,13 @@ export async function POST(request: Request) {
       );
     }
 
+    if (user.isGuestAccount) {
+      return NextResponse.json(
+        { error: "Esta compra ainda não foi reclamada. Usa o link enviado por email para definir a tua palavra-passe." },
+        { status: 403 }
+      );
+    }
+
     const valid = await verifyPassword(password, user.passwordHash);
 
     if (!valid) {
