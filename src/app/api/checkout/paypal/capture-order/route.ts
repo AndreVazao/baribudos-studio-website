@@ -26,6 +26,30 @@ export async function POST(request: Request) {
       return cookieStore.get(getPayPalCaptureCookieName(orderId))?.value ?? null;
     },
     authorize: authorizePayPalCapture,
+    acquireCaptureLease: async ({ checkoutId, orderId, leaseId, expiresAt }) => {
+      const now = new Date();
+      const result = await prisma.checkout.updateMany({
+        where: {
+          id: checkoutId,
+          provider: "PAYPAL",
+          providerRef: orderId,
+          status: "PENDING",
+          OR: [
+            { captureLeaseId: null },
+            { captureLeaseExpiresAt: null },
+            { captureLeaseExpiresAt: { lte: now } },
+          ],
+        },
+        data: { captureLeaseId: leaseId, captureLeaseExpiresAt: expiresAt },
+      });
+      return result.count === 1;
+    },
+    releaseCaptureLease: async ({ checkoutId, leaseId }) => {
+      await prisma.checkout.updateMany({
+        where: { id: checkoutId, status: "PENDING", captureLeaseId: leaseId },
+        data: { captureLeaseId: null, captureLeaseExpiresAt: null },
+      });
+    },
     getPayPalOrder,
     capturePayPalOrder,
     isValidCapture: (capture, expected) => isValidPayPalCapture(
