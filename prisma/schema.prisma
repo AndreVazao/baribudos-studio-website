@@ -40,6 +40,8 @@ model Series {
 
   ip           IntellectualProperty @relation(fields: [ipId], references: [id], onDelete: Cascade)
   publications Publication[]
+
+  @@index([ipId], map: "idx_Series_ipId")
 }
 
 model Publication {
@@ -62,6 +64,9 @@ model Publication {
   ip            IntellectualProperty @relation(fields: [ipId], references: [id], onDelete: Cascade)
   series        Series?              @relation(fields: [seriesId], references: [id], onDelete: SetNull)
   variants      PublicationVariant[]
+
+  @@index([ipId], map: "idx_Publication_ipId")
+  @@index([seriesId], map: "idx_Publication_seriesId")
 }
 
 model PublicationVariant {
@@ -88,6 +93,8 @@ model PublicationVariant {
   publication      Publication         @relation(fields: [publicationIdRef], references: [publicationId], onDelete: Cascade)
   assets           PublicationAsset[]
   products         Product[]
+
+  @@index([publicationIdRef], map: "idx_PublicationVariant_publicationIdRef")
 }
 
 model PublicationAsset {
@@ -99,6 +106,8 @@ model PublicationAsset {
   createdAt    DateTime           @default(now())
 
   variant      PublicationVariant @relation(fields: [variantIdRef], references: [variantId], onDelete: Cascade)
+
+  @@index([variantIdRef], map: "idx_PublicationAsset_variantIdRef")
 }
 
 model User {
@@ -193,6 +202,7 @@ model CustomerLibrary {
   product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([userId, productId])
+  @@index([productId], map: "idx_CustomerLibrary_productId")
 }
 
 model Checkout {
@@ -202,12 +212,17 @@ model Checkout {
   providerRef String?          @unique
   amountCents Int
   currency    String           @default("EUR")
-  status      CheckoutStatus   @default(PENDING)
-  createdAt   DateTime         @default(now())
+  status                      CheckoutStatus   @default(PENDING)
+  captureCapabilityHash       String?          @unique
+  captureCapabilityExpiresAt  DateTime?
+  captureCapabilityConsumedAt DateTime?
+  createdAt                   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
 
   user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   items       CheckoutItem[]
+
+  @@index([userId], map: "idx_Checkout_userId")
 }
 
 model CheckoutItem {
@@ -221,6 +236,7 @@ model CheckoutItem {
   product         Product   @relation(fields: [productId], references: [id], onDelete: Restrict)
 
   @@unique([checkoutId, productId])
+  @@index([productId], map: "idx_CheckoutItem_productId")
 }
 
 enum ProductType {
