@@ -5,9 +5,8 @@ import { getCurrentUser } from "@/lib/auth-session";
 import {
   createPayPalCaptureCapability,
   getPayPalCaptureCookieName,
-  PAYPAL_CAPTURE_CAPABILITY_TTL_SECONDS,
-  PAYPAL_CAPTURE_COOKIE_PATH,
 } from "@/lib/paypal-capture-capability.mjs";
+import { getPayPalCaptureCookieOptions } from "@/lib/paypal-capture-cookie.mjs";
 import { paymentErrorPayload } from "@/lib/payment-error.mjs";
 
 export async function POST(request: Request) {
@@ -122,13 +121,11 @@ export async function POST(request: Request) {
     });
 
     if (guestCapability) {
-      response.cookies.set(getPayPalCaptureCookieName(orderId), guestCapability.token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: PAYPAL_CAPTURE_COOKIE_PATH,
-        maxAge: PAYPAL_CAPTURE_CAPABILITY_TTL_SECONDS,
-      });
+      response.cookies.set(
+        getPayPalCaptureCookieName(orderId),
+        guestCapability.token,
+        getPayPalCaptureCookieOptions(process.env.NODE_ENV === "production"),
+      );
     }
 
     return response;

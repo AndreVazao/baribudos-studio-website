@@ -216,6 +216,8 @@ model Checkout {
   captureCapabilityHash       String?          @unique
   captureCapabilityExpiresAt  DateTime?
   captureCapabilityConsumedAt DateTime?
+  captureLeaseId             String?
+  captureLeaseExpiresAt      DateTime?
   createdAt                   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
 
@@ -223,6 +225,7 @@ model Checkout {
   items       CheckoutItem[]
 
   @@index([userId], map: "idx_Checkout_userId")
+  @@index([status, captureLeaseExpiresAt])
 }
 
 model CheckoutItem {
