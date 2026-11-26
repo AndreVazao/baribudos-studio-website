@@ -9,7 +9,7 @@ import {
   isSameOriginPayPalCaptureRequest,
   verifyPayPalCaptureCapability,
 } from "../src/lib/paypal-capture-capability.mjs";
-import { getPayPalCaptureCookieOptions } from "../src/lib/paypal-capture-cookie.mjs";
+import { getExpiredPayPalCaptureCookieOptions, getPayPalCaptureCookieOptions } from "../src/lib/paypal-capture-cookie.mjs";
 
 const now = new Date("2026-11-20T10:00:00.000Z");
 
@@ -178,7 +178,15 @@ test("PayPal routes enforce the owner-or-capability contract and never return th
   assert.ok(captureHandler.includes("dependencies.isSameOrigin("));
   assert.ok(captureHandler.includes("dependencies.authorize("));
   assert.ok(captureHandler.includes("capturePayPalOrderSingleFlight(orderId, checkout.id, dependencies.capturePayPalOrder)"));
-  assert.ok(captureRoute.includes("maxAge: 0"));
+  assert.ok(captureRoute.includes("getExpiredPayPalCaptureCookieOptions("));
+  assert.deepEqual(getExpiredPayPalCaptureCookieOptions(true), {
+    httpOnly: true,
+    secure: true,
+    sameSite: "lax",
+    path: "/api/checkout/paypal/capture-order",
+    maxAge: 0,
+    expires: new Date(0),
+  });
   assert.equal(captureRoute.includes("capability?: unknown"), false);
 });
 
