@@ -13,7 +13,7 @@ export function isValidStripePaidSession(session: { id?: unknown; mode?: unknown
   return Boolean(checkout.provider === "STRIPE" && checkout.providerRef === session.id && session.metadata?.checkoutId === checkout.id && session.mode === "payment" && session.payment_status === "paid" && session.amount_total === checkout.amountCents && String(session.currency || "").toUpperCase() === checkout.currency.toUpperCase());
 }
 
-export async function fulfillPaidCheckout(tx: Prisma.TransactionClient, args: { checkoutId: string; provider: "PAYPAL" | "STRIPE"; providerRef: string; captureCapabilityHash?: string; captureCapabilityAuthorizedAt?: Date }): Promise<{ ok: true; alreadyPaid: boolean } | { ok: false; reason: string }> {
+export async function fulfillPaidCheckout(tx: Prisma.TransactionClient, args: { checkoutId: string; provider: "PAYPAL" | "STRIPE"; providerRef: string; captureCapabilityHash?: string; captureCapabilityAuthorizedAt?: Date; captureLeaseId?: string }): Promise<{ ok: true; alreadyPaid: boolean } | { ok: false; reason: string }> {
   const checkout = await tx.checkout.findUnique({ where: { id: args.checkoutId }, include: { items: true } });
   if (!checkout || checkout.provider !== args.provider || checkout.providerRef !== args.providerRef) {
     return { ok: false, reason: "checkout_provider_reference_mismatch" };
@@ -37,6 +37,10 @@ export async function fulfillPaidCheckout(tx: Prisma.TransactionClient, args: { 
     return { ok: false, reason: "unexpected_capture_capability" };
   }
 
+  if (args.captureLeaseId && checkout.captureLeaseId !== args.captureLeaseId) {
+    return { ok: false, reason: "capture_lease_lost" };
+  }
+
   if (checkout.status === "PAID") {
     return { ok: true, alreadyPaid: true };
   }
@@ -58,6 +62,7 @@ export async function fulfillPaidCheckout(tx: Prisma.TransactionClient, args: { 
       provider: args.provider,
       providerRef: args.providerRef,
       status: "PENDING",
+      ...(args.captureLeaseId ? { captureLeaseId: args.captureLeaseId } : {}),
       ...(isGuestCapabilityCheckout
         ? {
             captureCapabilityHash: args.captureCapabilityHash,
@@ -68,6 +73,7 @@ export async function fulfillPaidCheckout(tx: Prisma.TransactionClient, args: { 
     },
     data: {
       status: "PAID",
+      ...(args.captureLeaseId ? { captureLeaseId: null, captureLeaseExpiresAt: null } : {}),
       ...(isGuestCapabilityCheckout ? { captureCapabilityConsumedAt: consumedAt } : {}),
     },
   });
