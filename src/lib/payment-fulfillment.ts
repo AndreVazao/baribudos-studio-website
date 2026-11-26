@@ -88,6 +88,13 @@ export async function fulfillPaidCheckout(tx: Prisma.TransactionClient, args: { 
     ) {
       return { ok: true, alreadyPaid: true };
     }
+    if (args.captureLeaseId && (
+      latest?.captureLeaseId !== args.captureLeaseId
+      || !latest.captureLeaseExpiresAt
+      || latest.captureLeaseExpiresAt <= new Date()
+    )) {
+      return { ok: false, reason: "capture_lease_lost" };
+    }
     return { ok: false, reason: "checkout_not_payable" };
   }
 
