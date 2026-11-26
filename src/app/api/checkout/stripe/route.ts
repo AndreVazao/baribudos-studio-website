@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getStripe } from "@/lib/stripe";
 import { getCurrentUser } from "@/lib/auth-session";
+import { resolveCheckoutUser } from "@/lib/guest-checkout-user";
+import { getGuestLibraryClaimConfig } from "@/lib/guest-library-claim.mjs";
 import { paymentErrorPayload } from "@/lib/payment-error.mjs";
 
 export async function POST(request: Request) {
@@ -37,6 +39,12 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+    if (!currentUser && !getGuestLibraryClaimConfig()) {
+      return NextResponse.json(
+        { error: "Checkout convidado temporariamente indisponível. Inicia sessão ou tenta mais tarde." },
+        { status: 503 }
+      );
+    }
 
     const product = await prisma.product.findUnique({
       where: { id: productId },
@@ -46,21 +54,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Produto indisponível." }, { status: 404 });
     }
 
-    const user = currentUser
-      ? currentUser
-      : await prisma.user.upsert({
-          where: { email: normalizedEmail },
-          update: {},
-          create: {
-            email: normalizedEmail,
-            passwordHash: "TEMP_EXTERNAL_CHECKOUT_ONLY",
-            role: "CUSTOMER",
-          },
-        });
+    const checkoutUser = await resolveCheckoutUser({
+      currentUser,
+      email: normalizedEmail,
+    });
+    if (!checkoutUser.ok) {
+      return NextResponse.json(
+        { error: checkoutUser.reason === "account_requires_login"
+          ? "Já existe uma conta com este email. Inicia sessão para continuar."
+          : "Email inválido." },
+        { status: checkoutUser.reason === "account_requires_login" ? 409 : 400 }
+      );
+    }
 
     const checkout = await prisma.checkout.create({
       data: {
-        userId: user.id,
+        userId: checkoutUser.user.id,
+        guestCheckout: checkoutUser.guestCheckout,
         provider: "STRIPE",
         amountCents: product.priceCents,
         currency: product.currency,
