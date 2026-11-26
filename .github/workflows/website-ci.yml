@@ -60,8 +60,14 @@ jobs:
       - name: Prisma generate
         run: npx prisma generate
 
-      - name: Prepare isolated PostgreSQL schema
-        run: npx prisma db push --skip-generate
+      - name: Apply Prisma migrations on isolated PostgreSQL
+        run: npx prisma migrate deploy
+
+      - name: Verify migration ledger
+        run: npx prisma migrate status
+
+      - name: Verify migrated schema matches Prisma
+        run: npx prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel prisma/schema.prisma --exit-code
 
       - name: Typecheck
         run: npm run typecheck
