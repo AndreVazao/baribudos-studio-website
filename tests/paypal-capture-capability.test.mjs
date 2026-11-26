@@ -9,6 +9,7 @@ import {
   isSameOriginPayPalCaptureRequest,
   verifyPayPalCaptureCapability,
 } from "../src/lib/paypal-capture-capability.mjs";
+import { getPayPalCaptureCookieOptions } from "../src/lib/paypal-capture-cookie.mjs";
 
 const now = new Date("2026-11-20T10:00:00.000Z");
 
@@ -160,9 +161,14 @@ test("PayPal routes enforce the owner-or-capability contract and never return th
   const captureHandler = await readFile(new URL("../src/lib/paypal-capture-handler.ts", import.meta.url), "utf8");
 
   assert.ok(createRoute.includes("captureCapabilityHash: guestCapability.tokenHash"));
-  assert.ok(createRoute.includes("httpOnly: true"));
-  assert.ok(createRoute.includes('secure: process.env.NODE_ENV === "production"'));
-  assert.ok(createRoute.includes("path: PAYPAL_CAPTURE_COOKIE_PATH"));
+  assert.ok(createRoute.includes("getPayPalCaptureCookieOptions("));
+  assert.deepEqual(getPayPalCaptureCookieOptions(true), {
+    httpOnly: true,
+    secure: true,
+    sameSite: "lax",
+    path: "/api/checkout/paypal/capture-order",
+    maxAge: 15 * 60,
+  });
   assert.equal(createRoute.includes("token: guestCapability.token"), false);
 
   assert.ok(captureRoute.includes("handlePayPalCaptureRequest("));
