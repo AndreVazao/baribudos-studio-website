@@ -52,6 +52,8 @@ function makeDependencies(overrides = {}) {
       return { id: orderId, status: "COMPLETED" };
     },
     isValidCapture: () => true,
+    acquireCaptureLease: async (input) => { calls.push(["acquireCaptureLease", input]); return true; },
+    releaseCaptureLease: async (input) => { calls.push(["releaseCaptureLease", input]); },
     fulfillPaidCheckout: async (input) => {
       calls.push(["fulfillPaidCheckout", input]);
       return { ok: true };
@@ -188,13 +190,11 @@ test("authenticated owner path captures and fulfills the matching local checkout
   assert.deepEqual(calls.filter(([name]) => name === "capturePayPalOrder"), [
     ["capturePayPalOrder", "ORDER-1", "checkout-1"],
   ]);
-  assert.deepEqual(calls.filter(([name]) => name === "fulfillPaidCheckout"), [
-    ["fulfillPaidCheckout", {
-      checkoutId: "checkout-1",
-      provider: "PAYPAL",
-      providerRef: "ORDER-1",
-    }],
-  ]);
+  const fulfillment = calls.find(([name]) => name === "fulfillPaidCheckout")[1];
+  assert.equal(fulfillment.checkoutId, "checkout-1");
+  assert.equal(fulfillment.provider, "PAYPAL");
+  assert.equal(fulfillment.providerRef, "ORDER-1");
+  assert.match(fulfillment.captureLeaseId, /^[0-9a-f-]{36}$/);
 });
 
 test("guest path passes the verified capability context into atomic fulfillment", async () => {
@@ -215,15 +215,13 @@ test("guest path passes the verified capability context into atomic fulfillment"
   assert.equal(result.status, 200);
   assert.equal(result.clearGuestCapabilityCookie, true);
   assert.equal(result.orderId, "ORDER-1");
-  assert.deepEqual(calls.filter(([name]) => name === "fulfillPaidCheckout"), [
-    ["fulfillPaidCheckout", {
-      checkoutId: "checkout-1",
-      provider: "PAYPAL",
-      providerRef: "ORDER-1",
-      captureCapabilityHash: "b".repeat(64),
-      captureCapabilityAuthorizedAt: authorizedAt,
-    }],
-  ]);
+  const fulfillment = calls.find(([name]) => name === "fulfillPaidCheckout")[1];
+  assert.equal(fulfillment.checkoutId, "checkout-1");
+  assert.equal(fulfillment.provider, "PAYPAL");
+  assert.equal(fulfillment.providerRef, "ORDER-1");
+  assert.equal(fulfillment.captureCapabilityHash, "b".repeat(64));
+  assert.equal(fulfillment.captureCapabilityAuthorizedAt, authorizedAt);
+  assert.match(fulfillment.captureLeaseId, /^[0-9a-f-]{36}$/);
 });
 
 test("completed provider order is reconciled without a second capture request", async () => {
@@ -323,3 +321,61 @@ test("concurrent same-instance requests share one PayPal capture call", async ()
   assert.equal(captureCalls, 1);
   assert.equal(calls.filter(([name]) => name === "fulfillPaidCheckout").length, 2);
 });
+
+
+test("database lease contention prevents provider lookup and capture", async () => {
+  const { dependencies, calls } = makeDependencies({
+    acquireCaptureLease: async (input) => {
+      calls.push(["acquireCaptureLease", input]);
+      return false;
+    },
+  });
+
+  const result = await handlePayPalCaptureRequest(makeRequest({ orderId: "ORDER-LEASED" }), dependencies);
+
+  assert.equal(result.status, 409);
+  assert.deepEqual(result.body, { error: "capture_in_progress" });
+  assert.equal(calls.some(([name]) => name === "getPayPalOrder"), false);
+  assert.equal(calls.some(([name]) => name === "capturePayPalOrder"), false);
+  assert.equal(calls.some(([name]) => name === "releaseCaptureLease"), false);
+});
+
+test("separate handler requests share a durable lease and only the lease owner reaches PayPal", async () => {
+  let leaseOwner = null;
+  let captureCalls = 0;
+  let releaseCapture;
+  let signalAcquired;
+  const acquired = new Promise((resolve) => { signalAcquired = resolve; });
+  const captureGate = new Promise((resolve) => { releaseCapture = resolve; });
+  const { dependencies } = makeDependencies({
+    acquireCaptureLease: async ({ leaseId }) => {
+      if (leaseOwner) return false;
+      leaseOwner = leaseId;
+      signalAcquired();
+      return true;
+    },
+    releaseCaptureLease: async ({ leaseId }) => {
+      if (leaseOwner === leaseId) leaseOwner = null;
+    },
+    getPayPalOrder: async (orderId) => ({ id: orderId, status: "APPROVED" }),
+    capturePayPalOrder: async (orderId) => {
+      captureCalls += 1;
+      await captureGate;
+      return { id: orderId, status: "COMPLETED" };
+    },
+  });
+
+  const first = handlePayPalCaptureRequest(makeRequest({ orderId: "ORDER-DISTRIBUTED" }), dependencies);
+  await acquired;
+  const second = await handlePayPalCaptureRequest(makeRequest({ orderId: "ORDER-DISTRIBUTED" }), dependencies);
+  assert.equal(second.status, 409);
+  assert.deepEqual(second.body, { error: "capture_in_progress" });
+  assert.equal(captureCalls, 1);
+
+  releaseCapture();
+  const firstResult = await first;
+  assert.equal(firstResult.status, 200);
+  assert.equal(captureCalls, 1);
+  assert.equal(leaseOwner, null);
+});
+
