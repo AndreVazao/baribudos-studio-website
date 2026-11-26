@@ -39,3 +39,13 @@ A Prisma migration adds the two nullable lease fields and a contention index. Pr
 - CI Prisma client generation, typecheck, unit tests and build.
 - Disposable PostgreSQL migration/transaction tests.
 - PayPal Sandbox only after explicit approval and with a dedicated test product/account; no live capture.
+
+
+## Verification checkpoint — 26 Nov 2026
+
+- Tested commit: `aab9e539ea212964c3656ceade40de51a0d1317f`.
+- Website CI completed successfully, including isolated PostgreSQL migration deployment and ledger/schema verification, Supabase roles/RLS/grants checks, typecheck, unit/integration tests, and build.
+- This is validation of the PR branch in disposable CI only—not production baseline certification.
+- PR #56 is still Draft and stacked on PR #47, which is also Draft and targets `main`. Do not merge #56 independently or retarget to `main` before resolving the stack and reviewing the production migration-baseline evidence.
+- Remaining gates: independent review of capture/capability/lease edge cases; read-only production schema reconciliation and reviewed baseline; guest-checkout recovery/expiry policy; approved sandbox verification; explicit rollout/backup/maintenance authorization. No migration, deployment, or payment was run against production.
+
