@@ -62,3 +62,10 @@ This is a controlled operator procedure, not an action performed by this PR. It 
 - The baseline does not manage `system_metadata`.
 - The Product unique-index migration removes the old non-unique helper index only after creating the unique index. The production snapshot had zero Product rows.
 - Production migration execution remains blocked pending explicit operational approval and backup verification.
+
+
+## Supabase bootstrap dependency
+
+The existing `system_metadata` table is not part of Prisma and was created outside the checked-in Supabase migration history. Its live columns are `key TEXT PRIMARY KEY`, `value TEXT NULL`, and `updated_at TIMESTAMPTZ DEFAULT now()`; RLS is enabled and anon/authenticated grants are revoked.
+
+For a **new** Supabase project only, execute `supabase/bootstrap/system_metadata.sql` before applying timestamped Supabase migrations. The existing production table is already present; do not execute the bootstrap there. The later `20261124175649_secure_system_metadata_rls_and_client_grants.sql` migration then reasserts the security boundary.
