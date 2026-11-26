@@ -17,6 +17,7 @@ BEGIN
     'PublicationVariant',
     'Series',
     'StudioSettings',
+    'SagaVisualSet',
     'Checkout',
     'CheckoutItem',
     'CustomerLibrary',
@@ -37,7 +38,8 @@ GRANT SELECT ON TABLE
   public."PublicationAsset",
   public."PublicationVariant",
   public."Series",
-  public."StudioSettings"
+  public."StudioSettings",
+  public."SagaVisualSet"
 TO anon, authenticated;
 
 GRANT SELECT ON TABLE
@@ -81,6 +83,10 @@ CREATE POLICY "Public Read" ON public."Series"
 
 DROP POLICY IF EXISTS "Public Read" ON public."StudioSettings";
 CREATE POLICY "Public Read" ON public."StudioSettings"
+  FOR SELECT TO anon, authenticated USING (true);
+
+DROP POLICY IF EXISTS "Public Read" ON public."SagaVisualSet";
+CREATE POLICY "Public Read" ON public."SagaVisualSet"
   FOR SELECT TO anon, authenticated USING (true);
 
 DROP POLICY IF EXISTS "Users can read own checkouts" ON public."Checkout";
