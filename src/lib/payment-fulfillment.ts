@@ -62,7 +62,7 @@ export async function fulfillPaidCheckout(tx: Prisma.TransactionClient, args: { 
       provider: args.provider,
       providerRef: args.providerRef,
       status: "PENDING",
-      ...(args.captureLeaseId ? { captureLeaseId: args.captureLeaseId } : {}),
+      ...(args.captureLeaseId ? { captureLeaseId: args.captureLeaseId, captureLeaseExpiresAt: { gt: new Date() } } : {}),
       ...(isGuestCapabilityCheckout
         ? {
             captureCapabilityHash: args.captureCapabilityHash,
