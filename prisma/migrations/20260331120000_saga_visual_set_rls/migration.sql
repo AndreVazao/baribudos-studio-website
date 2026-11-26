@@ -3,6 +3,7 @@
 -- against ordinary PostgreSQL test databases without Supabase roles.
 
 ALTER TABLE "SagaVisualSet" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "SagaVisualSet" ALTER COLUMN "updatedAt" DROP DEFAULT;
 
 DO $$
 BEGIN
