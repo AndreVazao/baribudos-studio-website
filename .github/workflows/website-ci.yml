@@ -69,6 +69,15 @@ jobs:
       - name: Verify migrated schema matches Prisma
         run: npx prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel prisma/schema.prisma --exit-code
 
+      - name: Bootstrap Supabase roles on isolated PostgreSQL
+        run: npx prisma db execute --file supabase/tests/bootstrap-roles.sql --schema prisma/schema.prisma
+
+      - name: Apply Supabase RLS migration on isolated PostgreSQL
+        run: npx prisma db execute --file supabase/migrations/20261126190000_reconcile_public_and_owner_rls.sql --schema prisma/schema.prisma
+
+      - name: Verify Supabase grants and RLS policies
+        run: npx prisma db execute --file supabase/tests/assert_rls_policies.sql --schema prisma/schema.prisma
+
       - name: Typecheck
         run: npm run typecheck
 
