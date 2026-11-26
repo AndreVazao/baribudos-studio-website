@@ -26,7 +26,7 @@ test("production baseline describes only the pre-feature Prisma schema", () => {
     "Checkout",
     "CheckoutItem"
   ]) {
-    assert.match(baseline, new RegExp(`CREATE TABLE "\${table}"`))
+    assert.ok(baseline.includes(`CREATE TABLE "${table}"`))
   }
 
   assert.match(baseline, /CREATE TYPE "ProductType"/)
