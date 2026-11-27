@@ -160,6 +160,12 @@ test("PayPal routes enforce the owner-or-capability contract and never return th
   const captureRoute = await readFile(new URL("../src/app/api/checkout/paypal/capture-order/route.ts", import.meta.url), "utf8");
   const captureHandler = await readFile(new URL("../src/lib/paypal-capture-handler.ts", import.meta.url), "utf8");
 
+  const createOriginGate = createRoute.indexOf("isSameOriginPayPalCaptureRequest(request.headers.get(\"origin\"), request.url)");
+  const bodyParse = createRoute.indexOf("body = await request.json()");
+  assert.ok(createOriginGate >= 0, "checkout creation must enforce a same-origin gate");
+  assert.ok(createOriginGate < bodyParse, "Origin must be checked before parsing or acting on checkout input");
+  assert.ok(createRoute.includes('status: 403'));
+
   assert.ok(createRoute.includes("captureCapabilityHash: guestCapability.tokenHash"));
   assert.ok(createRoute.includes("getPayPalCaptureCookieOptions("));
   assert.deepEqual(getPayPalCaptureCookieOptions(true), {
