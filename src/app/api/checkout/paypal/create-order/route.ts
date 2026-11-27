@@ -5,11 +5,17 @@ import { getCurrentUser } from "@/lib/auth-session";
 import {
   createPayPalCaptureCapability,
   getPayPalCaptureCookieName,
+  isSameOriginPayPalCaptureRequest,
 } from "@/lib/paypal-capture-capability.mjs";
 import { getPayPalCaptureCookieOptions } from "@/lib/paypal-capture-cookie.mjs";
 import { paymentErrorPayload } from "@/lib/payment-error.mjs";
 
 export async function POST(request: Request) {
+  // Checkout creation is state-changing and must not be triggerable cross-origin.
+  if (!isSameOriginPayPalCaptureRequest(request.headers.get("origin"), request.url)) {
+    return NextResponse.json({ error: "Origem não autorizada." }, { status: 403 });
+  }
+
   let body: unknown;
   try {
     body = await request.json();
