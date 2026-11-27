@@ -49,3 +49,11 @@ A Prisma migration adds the two nullable lease fields and a contention index. Pr
 - PR #56 is still Draft and stacked on PR #47, which is also Draft and targets `main`. Do not merge #56 independently or retarget to `main` before resolving the stack and reviewing the production migration-baseline evidence.
 - Remaining gates: independent review of capture/capability/lease edge cases; read-only production schema reconciliation and reviewed baseline; guest-checkout recovery/expiry policy; approved sandbox verification; explicit rollout/backup/maintenance authorization. No migration, deployment, or payment was run against production.
 
+
+
+## Final branch CI checkpoint — 27 Nov 2026
+
+- Final branch SHA: `c285fe2fb81451b0a9bc106dbebfc12f26714b13`.
+- All reported checks completed successfully: `validate`, `visibility`, and `Vercel Preview Comments`.
+- PR #56 remains open and Draft, based on `security/paypal-capture-capability-2026-11-20`; it is stacked on the PayPal capability work and must not be merged independently.
+- The green CI covers the disposable validation environment only. Production schema baseline/reconciliation, reviewed rollout plan, explicit sandbox approval, and operational authorization remain mandatory.
