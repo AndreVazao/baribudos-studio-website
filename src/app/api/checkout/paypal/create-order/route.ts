@@ -99,7 +99,18 @@ export async function POST(request: Request) {
       ? order.links.find((link: { rel?: string }) => link.rel === "approve")?.href
       : null;
 
-    if (!orderId || orderId.length > 128 || typeof approveUrl !== "string" || !approveUrl) {
+    let approvalLinkIsTrusted = false;
+    if (typeof approveUrl === "string" && approveUrl) {
+      try {
+        const parsedApprovalUrl = new URL(approveUrl);
+        approvalLinkIsTrusted = parsedApprovalUrl.protocol === "https:"
+          && (parsedApprovalUrl.hostname === "paypal.com" || parsedApprovalUrl.hostname.endsWith(".paypal.com"));
+      } catch {
+        approvalLinkIsTrusted = false;
+      }
+    }
+
+    if (!orderId || orderId.length > 128 || !approvalLinkIsTrusted) {
       await prisma.checkout.updateMany({
         where: { id: checkout.id, status: "PENDING", providerRef: null },
         data: { status: "FAILED" },
