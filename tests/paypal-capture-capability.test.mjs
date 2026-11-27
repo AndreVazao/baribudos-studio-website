@@ -220,3 +220,13 @@ test("capture handler places Origin, checkout and authorization gates before ext
   assert.ok(captureValidation > externalCapture, "capture validation must follow provider capture");
   assert.ok(fulfillment > captureValidation, "local fulfillment must follow provider response validation");
 });
+
+test("checkout creation failure marks only orphaned pending checkouts failed", async () => {
+  const createRoute = await readFile(new URL("../src/app/api/checkout/paypal/create-order/route.ts", import.meta.url), "utf8");
+  assert.ok(createRoute.includes("let createdCheckoutId: string | null = null"));
+  assert.ok(createRoute.includes("createdCheckoutId = checkout.id"));
+  assert.ok(createRoute.includes('where: { id: checkout.id, status: "PENDING", providerRef: null }'));
+  assert.ok(createRoute.includes('where: { id: createdCheckoutId, status: "PENDING", providerRef: null }'));
+  assert.ok(createRoute.includes('data: { status: "FAILED" }'));
+  assert.ok(createRoute.includes("catch {\n    // A provider or local persistence error must not strand"));
+});
