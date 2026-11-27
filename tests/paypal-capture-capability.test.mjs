@@ -230,3 +230,11 @@ test("checkout creation failure marks only orphaned pending checkouts failed", a
   assert.ok(createRoute.includes('data: { status: "FAILED" }'));
   assert.ok(createRoute.includes("catch {\n    // A provider or local persistence error must not strand"));
 });
+
+test("checkout creation only returns trusted HTTPS PayPal approval links", async () => {
+  const createRoute = await readFile(new URL("../src/app/api/checkout/paypal/create-order/route.ts", import.meta.url), "utf8");
+  assert.ok(createRoute.includes("parsedApprovalUrl.protocol === \"https:\""));
+  assert.ok(createRoute.includes('parsedApprovalUrl.hostname === "paypal.com"'));
+  assert.ok(createRoute.includes('parsedApprovalUrl.hostname.endsWith(".paypal.com")'));
+  assert.ok(createRoute.includes("!approvalLinkIsTrusted"));
+});
