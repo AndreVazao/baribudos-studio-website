@@ -38,6 +38,7 @@ export async function POST(request: Request) {
     );
   }
 
+  let createdCheckoutId: string | null = null;
   try {
     const currentUser = await getCurrentUser();
     const normalizedEmail = currentUser?.email || String(email || "").toLowerCase().trim();
@@ -85,6 +86,7 @@ export async function POST(request: Request) {
         },
       },
     });
+    createdCheckoutId = checkout.id;
 
     const order = await createPayPalOrder({
       amountCents: product.priceCents,
@@ -98,6 +100,11 @@ export async function POST(request: Request) {
       : null;
 
     if (!orderId || orderId.length > 128 || typeof approveUrl !== "string" || !approveUrl) {
+      await prisma.checkout.updateMany({
+        where: { id: checkout.id, status: "PENDING", providerRef: null },
+        data: { status: "FAILED" },
+      });
+      createdCheckoutId = null;
       return NextResponse.json(
         { error: "Resposta PayPal inválida." },
         { status: 502 }
@@ -136,6 +143,19 @@ export async function POST(request: Request) {
 
     return response;
   } catch {
+    // A provider or local persistence error must not strand an unpayable
+    // PENDING checkout without a PayPal reference.
+    if (createdCheckoutId) {
+      try {
+        await prisma.checkout.updateMany({
+          where: { id: createdCheckoutId, status: "PENDING", providerRef: null },
+          data: { status: "FAILED" },
+        });
+      } catch {
+        // Preserve the generic payment error; a reconciliation job handles any
+        // remaining orphaned checkout if the database is temporarily unavailable.
+      }
+    }
     return NextResponse.json(
       paymentErrorPayload("checkout_creation_failed"),
       { status: 500 }
