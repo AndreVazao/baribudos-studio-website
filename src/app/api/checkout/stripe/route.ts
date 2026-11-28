@@ -2,9 +2,15 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getStripe } from "@/lib/stripe";
 import { getCurrentUser } from "@/lib/auth-session";
+import { isSameOriginPayPalCaptureRequest } from "@/lib/paypal-capture-capability.mjs";
 import { paymentErrorPayload } from "@/lib/payment-error.mjs";
 
 export async function POST(request: Request) {
+  // Stripe checkout creation also mutates server state; reject cross-origin requests.
+  if (!isSameOriginPayPalCaptureRequest(request.headers.get("origin"), request.url)) {
+    return NextResponse.json({ error: "Origem não autorizada." }, { status: 403 });
+  }
+
   let body: unknown;
   try {
     body = await request.json();
@@ -27,6 +33,7 @@ export async function POST(request: Request) {
     );
   }
 
+  let createdCheckoutId: string | null = null;
   try {
     const currentUser = await getCurrentUser();
     const normalizedEmail = currentUser?.email || String(email || "").toLowerCase().trim();
@@ -74,6 +81,7 @@ export async function POST(request: Request) {
         },
       },
     });
+    createdCheckoutId = checkout.id;
 
     const stripe = getStripe();
 
@@ -100,6 +108,15 @@ export async function POST(request: Request) {
       },
     });
 
+    if (!session.id || typeof session.url !== "string" || !session.url) {
+      await prisma.checkout.updateMany({
+        where: { id: checkout.id, status: "PENDING", providerRef: null },
+        data: { status: "FAILED" },
+      });
+      createdCheckoutId = null;
+      return NextResponse.json({ error: "Resposta Stripe inválida." }, { status: 502 });
+    }
+
     await prisma.checkout.update({
       where: { id: checkout.id },
       data: {
@@ -109,6 +126,16 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ ok: true, url: session.url });
   } catch {
+    if (createdCheckoutId) {
+      try {
+        await prisma.checkout.updateMany({
+          where: { id: createdCheckoutId, status: "PENDING", providerRef: null },
+          data: { status: "FAILED" },
+        });
+      } catch {
+        // Keep the generic error; database reconciliation must handle residual orphans.
+      }
+    }
     return NextResponse.json(
       paymentErrorPayload("checkout_creation_failed"),
       { status: 500 }
