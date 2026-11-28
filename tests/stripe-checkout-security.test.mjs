@@ -18,5 +18,7 @@ test("Stripe checkout marks provider failures and malformed sessions as failed o
   assert.ok(route.includes('where: { id: checkout.id, status: "PENDING", providerRef: null }'));
   assert.ok(route.includes('where: { id: createdCheckoutId, status: "PENDING", providerRef: null }'));
   assert.ok(route.includes('data: { status: "FAILED" }'));
-  assert.ok(route.includes('if (!session.id || typeof session.url !== "string" || !session.url)'));
+  assert.ok(route.includes('parsedStripeCheckoutUrl.protocol === "https:"'));
+  assert.ok(route.includes('parsedStripeCheckoutUrl.hostname === "checkout.stripe.com"'));
+  assert.ok(route.includes("!stripeCheckoutUrlIsTrusted"));
 });
