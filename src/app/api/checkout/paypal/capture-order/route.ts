@@ -8,8 +8,8 @@ import {
   authorizePayPalCapture,
   getPayPalCaptureCookieName,
   isSameOriginPayPalCaptureRequest,
-  PAYPAL_CAPTURE_COOKIE_PATH,
 } from "@/lib/paypal-capture-capability.mjs";
+import { getExpiredPayPalCaptureCookieOptions } from "@/lib/paypal-capture-cookie.mjs";
 import { paymentErrorPayload } from "@/lib/payment-error.mjs";
 import { handlePayPalCaptureRequest } from "@/lib/paypal-capture-handler";
 
@@ -26,6 +26,30 @@ export async function POST(request: Request) {
       return cookieStore.get(getPayPalCaptureCookieName(orderId))?.value ?? null;
     },
     authorize: authorizePayPalCapture,
+    acquireCaptureLease: async ({ checkoutId, orderId, leaseId, expiresAt }) => {
+      const now = new Date();
+      const result = await prisma.checkout.updateMany({
+        where: {
+          id: checkoutId,
+          provider: "PAYPAL",
+          providerRef: orderId,
+          status: "PENDING",
+          OR: [
+            { captureLeaseId: null },
+            { captureLeaseExpiresAt: null },
+            { captureLeaseExpiresAt: { lte: now } },
+          ],
+        },
+        data: { captureLeaseId: leaseId, captureLeaseExpiresAt: expiresAt },
+      });
+      return result.count === 1;
+    },
+    releaseCaptureLease: async ({ checkoutId, leaseId }) => {
+      await prisma.checkout.updateMany({
+        where: { id: checkoutId, status: "PENDING", captureLeaseId: leaseId },
+        data: { captureLeaseId: null, captureLeaseExpiresAt: null },
+      });
+    },
     getPayPalOrder,
     capturePayPalOrder,
     isValidCapture: (capture, expected) => isValidPayPalCapture(
@@ -40,14 +64,11 @@ export async function POST(request: Request) {
   const response = NextResponse.json(result.body, { status: result.status });
 
   if (result.clearGuestCapabilityCookie && result.orderId) {
-    response.cookies.set(getPayPalCaptureCookieName(result.orderId), "", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: PAYPAL_CAPTURE_COOKIE_PATH,
-      maxAge: 0,
-      expires: new Date(0),
-    });
+    response.cookies.set(
+      getPayPalCaptureCookieName(result.orderId),
+      "",
+      getExpiredPayPalCaptureCookieOptions(process.env.NODE_ENV === "production"),
+    );
   }
 
   return response;

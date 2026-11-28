@@ -1,3 +1,7 @@
+import { randomUUID } from "node:crypto";
+
+export const PAYPAL_CAPTURE_LEASE_TTL_MS = 3 * 60 * 1000;
+
 export type PayPalCaptureCheckout = {
   id: string;
   provider: string;
@@ -8,6 +12,8 @@ export type PayPalCaptureCheckout = {
   captureCapabilityHash: string | null;
   captureCapabilityExpiresAt: Date | null;
   captureCapabilityConsumedAt: Date | null;
+  captureLeaseId?: string | null;
+  captureLeaseExpiresAt?: Date | null;
 };
 
 export type PayPalCaptureAuthorization =
@@ -26,6 +32,7 @@ export type PayPalCaptureFulfillmentInput = {
   providerRef: string;
   captureCapabilityHash?: string;
   captureCapabilityAuthorizedAt?: Date;
+  captureLeaseId?: string;
 };
 
 export type PayPalCaptureHandlerDependencies = {
@@ -38,6 +45,8 @@ export type PayPalCaptureHandlerDependencies = {
     currentUserId: string | null;
     capability: string | null;
   }) => PayPalCaptureAuthorization;
+  acquireCaptureLease: (input: { checkoutId: string; orderId: string; leaseId: string; expiresAt: Date }) => Promise<boolean>;
+  releaseCaptureLease: (input: { checkoutId: string; leaseId: string }) => Promise<void>;
   getPayPalOrder: (orderId: string) => Promise<unknown>;
   capturePayPalOrder: (orderId: string, checkoutId: string) => Promise<unknown>;
   isValidCapture: (
@@ -172,55 +181,77 @@ export async function handlePayPalCaptureRequest(
       return failure(409, "Checkout não está disponível para pagamento.");
     }
 
-    // A previous capture request may have succeeded at PayPal while its HTTP
-    // response was lost. Read the provider's durable order state before deciding
-    // whether another capture call is appropriate.
-    const providerOrder = await dependencies.getPayPalOrder(orderId);
-    const providerStatus = providerOrder && typeof providerOrder === "object"
-      ? (providerOrder as { status?: unknown }).status
-      : undefined;
-
-    let capture: unknown;
-    if (providerStatus === "COMPLETED") {
-      capture = providerOrder;
-    } else if (providerStatus === "APPROVED") {
-      capture = await capturePayPalOrderSingleFlight(orderId, checkout.id, dependencies.capturePayPalOrder);
-    } else {
-      return failure(409, "O pedido PayPal ainda não está aprovado para captura.");
-    }
-
-    if (!dependencies.isValidCapture(capture, {
+    // A database lease coordinates server instances. The provider's stable
+    // PayPal-Request-Id remains the recovery/idempotency backstop after expiry.
+    const leaseId = randomUUID();
+    const leaseExpiresAt = new Date(Date.now() + PAYPAL_CAPTURE_LEASE_TTL_MS);
+    const leaseAcquired = await dependencies.acquireCaptureLease({
+      checkoutId: checkout.id,
       orderId,
-      checkoutId: checkout.id,
-      amountCents: checkout.amountCents,
-      currency: checkout.currency,
-    })) {
-      return failure(409, "O pagamento PayPal não corresponde ao checkout esperado.");
-    }
-
-    // Capability consumption, PAID state and entitlement writes are delegated
-    // to one local transaction. This does not reserve the provider call itself.
-    const fulfillment = await dependencies.fulfillPaidCheckout({
-      checkoutId: checkout.id,
-      provider: "PAYPAL",
-      providerRef: orderId,
-      ...(authorization.mode === "guest"
-        ? {
-            captureCapabilityHash: authorization.capabilityHash,
-            captureCapabilityAuthorizedAt: authorization.authorizedAt,
-          }
-        : {}),
+      leaseId,
+      expiresAt: leaseExpiresAt,
     });
-
-    if (!fulfillment.ok) {
-      return failure(409, fulfillment.reason || "payment_fulfillment_conflict");
+    if (!leaseAcquired) {
+      return failure(409, "capture_in_progress");
     }
 
-    return success(
-      dependencies.successUrl,
-      orderId,
-      authorization.mode === "guest",
-    );
+    try {
+      // A previous capture request may have succeeded at PayPal while its HTTP
+      // response was lost. Read the provider's durable order state first.
+      const providerOrder = await dependencies.getPayPalOrder(orderId);
+      const providerStatus = providerOrder && typeof providerOrder === "object"
+        ? (providerOrder as { status?: unknown }).status
+        : undefined;
+
+      let capture: unknown;
+      if (providerStatus === "COMPLETED") {
+        capture = providerOrder;
+      } else if (providerStatus === "APPROVED") {
+        capture = await capturePayPalOrderSingleFlight(orderId, checkout.id, dependencies.capturePayPalOrder);
+      } else {
+        return failure(409, "O pedido PayPal ainda não está aprovado para captura.");
+      }
+
+      if (!dependencies.isValidCapture(capture, {
+        orderId,
+        checkoutId: checkout.id,
+        amountCents: checkout.amountCents,
+        currency: checkout.currency,
+      })) {
+        return failure(409, "O pagamento PayPal não corresponde ao checkout esperado.");
+      }
+
+      // Lease ownership is checked in the same transaction as PAID and grants.
+      const fulfillment = await dependencies.fulfillPaidCheckout({
+        checkoutId: checkout.id,
+        provider: "PAYPAL",
+        providerRef: orderId,
+        captureLeaseId: leaseId,
+        ...(authorization.mode === "guest"
+          ? {
+              captureCapabilityHash: authorization.capabilityHash,
+              captureCapabilityAuthorizedAt: authorization.authorizedAt,
+            }
+          : {}),
+      });
+
+      if (!fulfillment.ok) {
+        return failure(409, fulfillment.reason || "payment_fulfillment_conflict");
+      }
+
+      return success(
+        dependencies.successUrl,
+        orderId,
+        authorization.mode === "guest",
+      );
+    } finally {
+      try {
+        await dependencies.releaseCaptureLease({ checkoutId: checkout.id, leaseId });
+      } catch {
+        // A stale lease expires automatically; release failure must not mask a
+        // completed provider capture or local fulfillment result.
+      }
+    }
   } catch {
     return {
       status: 500,

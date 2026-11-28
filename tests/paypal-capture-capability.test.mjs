@@ -9,6 +9,7 @@ import {
   isSameOriginPayPalCaptureRequest,
   verifyPayPalCaptureCapability,
 } from "../src/lib/paypal-capture-capability.mjs";
+import { getExpiredPayPalCaptureCookieOptions, getPayPalCaptureCookieOptions } from "../src/lib/paypal-capture-cookie.mjs";
 
 const now = new Date("2026-11-20T10:00:00.000Z");
 
@@ -159,10 +160,21 @@ test("PayPal routes enforce the owner-or-capability contract and never return th
   const captureRoute = await readFile(new URL("../src/app/api/checkout/paypal/capture-order/route.ts", import.meta.url), "utf8");
   const captureHandler = await readFile(new URL("../src/lib/paypal-capture-handler.ts", import.meta.url), "utf8");
 
+  const createOriginGate = createRoute.indexOf("isSameOriginPayPalCaptureRequest(request.headers.get(\"origin\"), request.url)");
+  const bodyParse = createRoute.indexOf("body = await request.json()");
+  assert.ok(createOriginGate >= 0, "checkout creation must enforce a same-origin gate");
+  assert.ok(createOriginGate < bodyParse, "Origin must be checked before parsing or acting on checkout input");
+  assert.ok(createRoute.includes('status: 403'));
+
   assert.ok(createRoute.includes("captureCapabilityHash: guestCapability.tokenHash"));
-  assert.ok(createRoute.includes("httpOnly: true"));
-  assert.ok(createRoute.includes('secure: process.env.NODE_ENV === "production"'));
-  assert.ok(createRoute.includes("path: PAYPAL_CAPTURE_COOKIE_PATH"));
+  assert.ok(createRoute.includes("getPayPalCaptureCookieOptions("));
+  assert.deepEqual(getPayPalCaptureCookieOptions(true), {
+    httpOnly: true,
+    secure: true,
+    sameSite: "lax",
+    path: "/api/checkout/paypal/capture-order",
+    maxAge: 15 * 60,
+  });
   assert.equal(createRoute.includes("token: guestCapability.token"), false);
 
   assert.ok(captureRoute.includes("handlePayPalCaptureRequest("));
@@ -172,7 +184,15 @@ test("PayPal routes enforce the owner-or-capability contract and never return th
   assert.ok(captureHandler.includes("dependencies.isSameOrigin("));
   assert.ok(captureHandler.includes("dependencies.authorize("));
   assert.ok(captureHandler.includes("capturePayPalOrderSingleFlight(orderId, checkout.id, dependencies.capturePayPalOrder)"));
-  assert.ok(captureRoute.includes("maxAge: 0"));
+  assert.ok(captureRoute.includes("getExpiredPayPalCaptureCookieOptions("));
+  assert.deepEqual(getExpiredPayPalCaptureCookieOptions(true), {
+    httpOnly: true,
+    secure: true,
+    sameSite: "lax",
+    path: "/api/checkout/paypal/capture-order",
+    maxAge: 0,
+    expires: new Date(0),
+  });
   assert.equal(captureRoute.includes("capability?: unknown"), false);
 });
 
@@ -199,4 +219,22 @@ test("capture handler places Origin, checkout and authorization gates before ext
   assert.ok(externalCapture > providerStateLookup, "provider capture must follow provider state lookup");
   assert.ok(captureValidation > externalCapture, "capture validation must follow provider capture");
   assert.ok(fulfillment > captureValidation, "local fulfillment must follow provider response validation");
+});
+
+test("checkout creation failure marks only orphaned pending checkouts failed", async () => {
+  const createRoute = await readFile(new URL("../src/app/api/checkout/paypal/create-order/route.ts", import.meta.url), "utf8");
+  assert.ok(createRoute.includes("let createdCheckoutId: string | null = null"));
+  assert.ok(createRoute.includes("createdCheckoutId = checkout.id"));
+  assert.ok(createRoute.includes('where: { id: checkout.id, status: "PENDING", providerRef: null }'));
+  assert.ok(createRoute.includes('where: { id: createdCheckoutId, status: "PENDING", providerRef: null }'));
+  assert.ok(createRoute.includes('data: { status: "FAILED" }'));
+  assert.ok(createRoute.includes("catch {\n    // A provider or local persistence error must not strand"));
+});
+
+test("checkout creation only returns trusted HTTPS PayPal approval links", async () => {
+  const createRoute = await readFile(new URL("../src/app/api/checkout/paypal/create-order/route.ts", import.meta.url), "utf8");
+  assert.ok(createRoute.includes("parsedApprovalUrl.protocol === \"https:\""));
+  assert.ok(createRoute.includes('parsedApprovalUrl.hostname === "paypal.com"'));
+  assert.ok(createRoute.includes('parsedApprovalUrl.hostname.endsWith(".paypal.com")'));
+  assert.ok(createRoute.includes("!approvalLinkIsTrusted"));
 });

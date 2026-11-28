@@ -58,6 +58,8 @@ function makeDependencies(overrides = {}) {
       requestId,
     }),
     isValidCapture: () => true,
+    acquireCaptureLease: async () => true,
+    releaseCaptureLease: async () => {},
     fulfillPaidCheckout: async () => ({ ok: true }),
     successUrl: "https://shop.example/biblioteca",
     paymentErrorPayload: (code) => ({ error: code }),

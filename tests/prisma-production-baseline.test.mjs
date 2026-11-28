@@ -47,6 +47,7 @@ test("later migrations add exactly the production objects found missing", () => 
   const sagaRls = migration("20260331120000_saga_visual_set_rls")
   const capability = migration("20261120_paypal_capture_capability")
   const productUnique = migration("20261125103600_product_publication_variant_unique")
+  const lease = migration("20261126064000_paypal_capture_lease")
 
   assert.match(saga, /CREATE TABLE IF NOT EXISTS "SagaVisualSet"/)
   assert.match(sagaRls, /ALTER TABLE "SagaVisualSet" ENABLE ROW LEVEL SECURITY/)
@@ -55,13 +56,17 @@ test("later migrations add exactly the production objects found missing", () => 
   assert.match(capability, /captureCapabilityConsumedAt/)
   assert.match(productUnique, /CREATE UNIQUE INDEX IF NOT EXISTS "Product_publicationVariantId_key"/)
   assert.match(productUnique, /DROP INDEX IF EXISTS "idx_Product_publicationVariantId"/)
+  assert.match(lease, /captureLeaseId/)
+  assert.match(lease, /captureLeaseExpiresAt/)
+  assert.match(lease, /Checkout_status_captureLeaseExpiresAt_idx/)
 
   const names = [
     baselineName,
     "20260330_add_saga_visual_sets",
     "20260331120000_saga_visual_set_rls",
     "20261120_paypal_capture_capability",
-    "20261125103600_product_publication_variant_unique"
+    "20261125103600_product_publication_variant_unique",
+    "20261126064000_paypal_capture_lease"
   ]
   assert.deepEqual(names, [...names].sort())
 })

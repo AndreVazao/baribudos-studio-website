@@ -5,12 +5,17 @@ import { getCurrentUser } from "@/lib/auth-session";
 import {
   createPayPalCaptureCapability,
   getPayPalCaptureCookieName,
-  PAYPAL_CAPTURE_CAPABILITY_TTL_SECONDS,
-  PAYPAL_CAPTURE_COOKIE_PATH,
+  isSameOriginPayPalCaptureRequest,
 } from "@/lib/paypal-capture-capability.mjs";
+import { getPayPalCaptureCookieOptions } from "@/lib/paypal-capture-cookie.mjs";
 import { paymentErrorPayload } from "@/lib/payment-error.mjs";
 
 export async function POST(request: Request) {
+  // Checkout creation is state-changing and must not be triggerable cross-origin.
+  if (!isSameOriginPayPalCaptureRequest(request.headers.get("origin"), request.url)) {
+    return NextResponse.json({ error: "Origem não autorizada." }, { status: 403 });
+  }
+
   let body: unknown;
   try {
     body = await request.json();
@@ -33,6 +38,7 @@ export async function POST(request: Request) {
     );
   }
 
+  let createdCheckoutId: string | null = null;
   try {
     const currentUser = await getCurrentUser();
     const normalizedEmail = currentUser?.email || String(email || "").toLowerCase().trim();
@@ -80,6 +86,7 @@ export async function POST(request: Request) {
         },
       },
     });
+    createdCheckoutId = checkout.id;
 
     const order = await createPayPalOrder({
       amountCents: product.priceCents,
@@ -92,7 +99,23 @@ export async function POST(request: Request) {
       ? order.links.find((link: { rel?: string }) => link.rel === "approve")?.href
       : null;
 
-    if (!orderId || orderId.length > 128 || typeof approveUrl !== "string" || !approveUrl) {
+    let approvalLinkIsTrusted = false;
+    if (typeof approveUrl === "string" && approveUrl) {
+      try {
+        const parsedApprovalUrl = new URL(approveUrl);
+        approvalLinkIsTrusted = parsedApprovalUrl.protocol === "https:"
+          && (parsedApprovalUrl.hostname === "paypal.com" || parsedApprovalUrl.hostname.endsWith(".paypal.com"));
+      } catch {
+        approvalLinkIsTrusted = false;
+      }
+    }
+
+    if (!orderId || orderId.length > 128 || !approvalLinkIsTrusted) {
+      await prisma.checkout.updateMany({
+        where: { id: checkout.id, status: "PENDING", providerRef: null },
+        data: { status: "FAILED" },
+      });
+      createdCheckoutId = null;
       return NextResponse.json(
         { error: "Resposta PayPal inválida." },
         { status: 502 }
@@ -122,17 +145,28 @@ export async function POST(request: Request) {
     });
 
     if (guestCapability) {
-      response.cookies.set(getPayPalCaptureCookieName(orderId), guestCapability.token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: PAYPAL_CAPTURE_COOKIE_PATH,
-        maxAge: PAYPAL_CAPTURE_CAPABILITY_TTL_SECONDS,
-      });
+      response.cookies.set(
+        getPayPalCaptureCookieName(orderId),
+        guestCapability.token,
+        getPayPalCaptureCookieOptions(process.env.NODE_ENV === "production"),
+      );
     }
 
     return response;
   } catch {
+    // A provider or local persistence error must not strand an unpayable
+    // PENDING checkout without a PayPal reference.
+    if (createdCheckoutId) {
+      try {
+        await prisma.checkout.updateMany({
+          where: { id: createdCheckoutId, status: "PENDING", providerRef: null },
+          data: { status: "FAILED" },
+        });
+      } catch {
+        // Preserve the generic payment error; a reconciliation job handles any
+        // remaining orphaned checkout if the database is temporarily unavailable.
+      }
+    }
     return NextResponse.json(
       paymentErrorPayload("checkout_creation_failed"),
       { status: 500 }
