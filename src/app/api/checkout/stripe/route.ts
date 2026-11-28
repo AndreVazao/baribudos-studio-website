@@ -108,7 +108,18 @@ export async function POST(request: Request) {
       },
     });
 
-    if (!session.id || typeof session.url !== "string" || !session.url) {
+    let stripeCheckoutUrlIsTrusted = false;
+    if (typeof session.url === "string" && session.url) {
+      try {
+        const parsedStripeCheckoutUrl = new URL(session.url);
+        stripeCheckoutUrlIsTrusted = parsedStripeCheckoutUrl.protocol === "https:"
+          && parsedStripeCheckoutUrl.hostname === "checkout.stripe.com";
+      } catch {
+        stripeCheckoutUrlIsTrusted = false;
+      }
+    }
+
+    if (!session.id || !stripeCheckoutUrlIsTrusted) {
       await prisma.checkout.updateMany({
         where: { id: checkout.id, status: "PENDING", providerRef: null },
         data: { status: "FAILED" },
