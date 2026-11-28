@@ -57,3 +57,18 @@ A Prisma migration adds the two nullable lease fields and a contention index. Pr
 - All reported checks completed successfully: `validate`, `visibility`, and `Vercel Preview Comments`.
 - PR #56 remains open and Draft, based on `security/paypal-capture-capability-2026-11-20`; it is stacked on the PayPal capability work and must not be merged independently.
 - The green CI covers the disposable validation environment only. Production schema baseline/reconciliation, reviewed rollout plan, explicit sandbox approval, and operational authorization remain mandatory.
+
+
+## Follow-up audit — Stripe webhook recovery
+
+Read-only review of `src/app/api/webhook/stripe/route.ts` confirms:
+
+- Raw request body and `stripe-signature` are passed to Stripe's `constructEvent`; absent signature, missing secret, or signature mismatch fail closed.
+- Checkout metadata ID is required and local checkout must exist.
+- Provider, session reference, and payment mode are checked before fulfillment.
+- `async_payment_failed` only transitions a PENDING checkout to FAILED; a later failure cannot overwrite PAID.
+- `checkout.session.completed` with unpaid status is acknowledged as pending and grants no library entitlement.
+- Paid fulfillment requires the Stripe session metadata checkout ID, exact provider reference, payment mode, paid status, expected amount, and currency.
+- Entitlement grant uses the shared transactional fulfillment path and conditional PENDING -> PAID transition; repeated paid events are idempotent through already-paid handling.
+
+Remaining operational gates: webhook delivery/retry observation, provider-to-local reconciliation and orphan recovery runbook, production schema baseline independent review, approved sandbox testing, backup/maintenance plan, and explicit rollout authorization. No production payment or migration was executed.
